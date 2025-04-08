@@ -77,4 +77,6 @@ L'implementazione deve attenersi rigorosamente a questi principi
 - non implementare funzionalità su casi d'uso ipotetici
 - il catalogo è in sola lettura, ci saranno dei link per navigare tra le pagine ma NESSUN FORM per inserire nuovi messaggi/servizi o modifica di quello che c'è
 
-Non aggiungere altro, per ora concentriamoci solo sulla procedura di creazione catalogo, partendo SOLO dalla pagina del servizio di **erp-crm-service**
+Voglio cambiare la generazione della documentazione dei servizi:
+il comportamento di default è di creare la pagina di documentazione di ogni servizio che trovi nella cartella services.
+se ti passo l'arg --service con il nome di un servizio, mi generi solo quella

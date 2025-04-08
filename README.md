@@ -2,6 +2,8 @@
 
 Generatore di sito web statico per la documentazione delle relazioni tra servizi Photosì.
 
+Le SPECIFICHE del builder sono in specifiche/Readme.MD
+
 ## Descrizione
 
 Questo progetto genera un portale web statico per consultare la documentazione delle relazioni tra servizi di Photosì. Il portale visualizza le interazioni tra servizi attraverso eventi, in forma di grafici interattivi.

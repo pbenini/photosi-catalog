@@ -94,8 +94,14 @@ def main():
         if args.service:
             generator.generate_service_page(args.service)
         else:
-            # For now, only generate the erp-crm-service documentation per the requirements
-            generator.generate_service_page("erp-crm-service")
+            # Generate pages for all services found in the services directory
+            services_dir = Path(args.input) / "services"
+            if services_dir.exists():
+                for service_file in services_dir.glob("*.yaml"):
+                    service_name = service_file.stem
+                    generator.generate_service_page(service_name)
+            else:
+                print(f"Warning: Services directory not found at {services_dir}", file=sys.stderr)
             
         print(f"Site generated successfully in {args.output}")
         return 0
