@@ -1,0 +1,108 @@
+"""
+Site generator module for the photosi-catalog-site-builder.
+Coordinates the generation of the entire documentation site.
+"""
+
+import os
+import json
+from pathlib import Path
+
+from parser.service_parser import ServiceParser
+from parser.event_parser import EventParser
+from generators.service_page import ServicePageGenerator
+from generators.event_page import EventPageGenerator
+
+class SiteGenerator:
+    """Generator for the entire documentation site."""
+    
+    def __init__(self, input_directory, output_directory):
+        """
+        Initialize the site generator.
+        
+        Args:
+            input_directory (str): Directory containing the AsyncAPI files.
+            output_directory (str): Directory where the generated site will be saved.
+        """
+        self.input_directory = Path(input_directory)
+        self.output_directory = Path(output_directory)
+        
+        # Initialize parsers
+        self.service_parser = ServiceParser(input_directory)
+        self.event_parser = EventParser(input_directory)
+        
+        # Initialize page generators
+        self.service_page_generator = ServicePageGenerator(output_directory)
+        self.event_page_generator = EventPageGenerator(output_directory)
+        
+    def generate_service_page(self, service_name):
+        """
+        Generate the documentation page for a service.
+        
+        Args:
+            service_name (str): Name of the service to generate documentation for.
+            
+        Returns:
+            str: Path to the generated service page.
+        """
+        # Parse the service
+        service = self.service_parser.parse(service_name)
+        
+        # Collect detailed information about each event
+        for event in service.received_events:
+            detailed_event = self.event_parser.parse(event.type, event.id)
+            event.name = detailed_event.name
+            event.description = detailed_event.description
+            
+        for event in service.sent_events:
+            detailed_event = self.event_parser.parse(event.type, event.id)
+            event.name = detailed_event.name
+            event.description = detailed_event.description
+            
+        # Generate the graph data
+        graph_data = service.to_graph_data()
+        
+        # Save the graph data as JSON
+        graph_data_path = self.output_directory / 'static' / 'js' / 'graph-data'
+        os.makedirs(graph_data_path, exist_ok=True)
+        
+        with open(graph_data_path / f"{service_name}.json", 'w', encoding='utf-8') as f:
+            json.dump(graph_data, f, indent=2)
+            
+        # Generate the service page
+        return self.service_page_generator.generate(service)
+        
+    def generate_event_page(self, event_type, event_name):
+        """
+        Generate the documentation page for an event.
+        
+        Args:
+            event_type (str): Type of the event (message, request, command).
+            event_name (str): Name of the event to generate documentation for.
+            
+        Returns:
+            str: Path to the generated event page.
+        """
+        # Parse the event
+        event = self.event_parser.parse(event_type, event_name)
+        
+        # Generate the event page
+        return self.event_page_generator.generate(event)
+        
+    def generate_all(self):
+        """
+        Generate documentation for all services and events.
+        
+        Returns:
+            list: Paths to all generated pages.
+        """
+        generated_pages = []
+        
+        # Get all services
+        services = self.service_parser.list_all_services()
+        
+        # Generate pages for each service
+        for service_name in services:
+            service_page = self.generate_service_page(service_name)
+            generated_pages.append(service_page)
+            
+        return generated_pages

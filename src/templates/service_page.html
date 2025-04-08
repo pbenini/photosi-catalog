@@ -1,0 +1,327 @@
+{% extends "base.html" %}
+
+{% block title %}{{ service.title }} - Photosì Service Documentation{% endblock %}
+
+{% block head %}
+<style>
+    .service-header {
+        margin-bottom: 20px;
+    }
+    
+    .service-description {
+        margin-bottom: 30px;
+    }
+    
+    .service-graph {
+        width: 100%;
+        height: 600px;
+        margin-bottom: 30px;
+        border: 1px solid #ddd;
+        border-radius: 4px;
+        position: relative;
+        overflow: hidden;
+    }
+    
+    .node {
+        position: absolute;
+        padding: 10px;
+        border-radius: 5px;
+        color: white;
+        width: 150px;
+        text-align: center;
+        transition: all 0.3s ease;
+        cursor: pointer;
+        box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+    }
+    
+    .node:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 4px 8px rgba(0,0,0,0.2);
+    }
+    
+    .service-node {
+        background-color: #ff6b6b;
+        border: 1px solid #ff5252;
+    }
+    
+    .message-node {
+        background-color: #51cf66;
+        border: 1px solid #40c057;
+    }
+    
+    .request-node {
+        background-color: #339af0;
+        border: 1px solid #228be6;
+    }
+    
+    .command-node {
+        background-color: #fcc419;
+        border: 1px solid #fab005;
+    }
+    
+    .unknown-node {
+        background-color: #adb5bd;
+        border: 1px solid #868e96;
+    }
+    
+    .event-sidebar {
+        background-color: #f9f9f9;
+        padding: 20px;
+        border-radius: 5px;
+    }
+    
+    .event-list {
+        list-style: none;
+        padding: 0;
+    }
+    
+    .event-list-item {
+        margin-bottom: 10px;
+    }
+    
+    .event-list-item a {
+        display: block;
+        padding: 10px;
+        background-color: #fff;
+        border-radius: 5px;
+        text-decoration: none;
+        color: #333;
+        border: 1px solid #ddd;
+    }
+    
+    .event-list-item a:hover {
+        background-color: #f0f0f0;
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="service-page">
+    <div class="service-header">
+        <h1>{{ service.title }}</h1>
+    </div>
+    
+    <div class="service-description">
+        <p>Repository: {{ service.description }}</p>
+    </div>
+    
+    <div class="service-graph" id="service-graph"></div>
+    
+    <div class="event-sidebar">
+        <div class="events-received">
+            <h2>Received Events</h2>
+            <ul class="event-list">
+                {% for event in service.received_events %}
+                <li class="event-list-item">
+                    <a href="/events/{{ event.type }}_{{ event.id }}.html">
+                        <strong>{{ event.id }}</strong>
+                        <span class="event-type">({{ event.type }})</span>
+                    </a>
+                </li>
+                {% endfor %}
+            </ul>
+        </div>
+        
+        <div class="events-sent">
+            <h2>Sent Events</h2>
+            <ul class="event-list">
+                {% for event in service.sent_events %}
+                <li class="event-list-item">
+                    <a href="/events/{{ event.type }}_{{ event.id }}.html">
+                        <strong>{{ event.id }}</strong>
+                        <span class="event-type">({{ event.type }})</span>
+                    </a>
+                </li>
+                {% endfor %}
+            </ul>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+// Function to fetch graph data
+async function fetchGraphData() {
+    try {
+        const response = await fetch('{{ graph_data_url }}');
+        if (!response.ok) {
+            throw new Error('Failed to fetch graph data');
+        }
+        return await response.json();
+    } catch (error) {
+        console.error('Error fetching graph data:', error);
+        return { nodes: [], edges: [] };
+    }
+}
+
+// Simple function to truncate long text
+function truncateText(text, maxLength = 15) {
+    if (text.length <= maxLength) return text;
+    return text.substring(0, maxLength) + '...';
+}
+
+// Function to get node type CSS class
+function getNodeTypeClass(nodeType) {
+    const typeMap = {
+        'services': 'service-node',
+        'messages': 'message-node',
+        'requests': 'request-node',
+        'commands': 'command-node',
+        'unknowns': 'unknown-node'
+    };
+    return typeMap[nodeType] || 'unknown-node';
+}
+
+// Function to get node display name
+function getNodeLabel(node) {
+    if (node.type === 'services') {
+        return node.data.service.data.name;
+    } else if (node.data.message && node.data.message.data) {
+        return truncateText(node.data.message.data.name);
+    }
+    return truncateText(node.id);
+}
+
+// Function to draw the edges
+function drawEdges(container, nodes, edges) {
+    const svg = document.createElementNS('http://www.w3.org/2000/svg', 'svg');
+    svg.setAttribute('width', '100%');
+    svg.setAttribute('height', '100%');
+    svg.style.position = 'absolute';
+    svg.style.top = '0';
+    svg.style.left = '0';
+    svg.style.pointerEvents = 'none';
+    
+    edges.forEach(edge => {
+        const sourceNode = nodes.find(n => n.id === edge.source);
+        const targetNode = nodes.find(n => n.id === edge.target);
+        
+        if (!sourceNode || !targetNode) return;
+        
+        // Calculate positions
+        const sourceElement = document.getElementById(`node-${sourceNode.id}`);
+        const targetElement = document.getElementById(`node-${targetNode.id}`);
+        
+        if (!sourceElement || !targetElement) return;
+        
+        const sourceRect = sourceElement.getBoundingClientRect();
+        const targetRect = targetElement.getBoundingClientRect();
+        const containerRect = container.getBoundingClientRect();
+        
+        // Calculate relative positions
+        const startX = sourceRect.left - containerRect.left + sourceRect.width;
+        const startY = sourceRect.top - containerRect.top + sourceRect.height/2;
+        const endX = targetRect.left - containerRect.left;
+        const endY = targetRect.top - containerRect.top + targetRect.height/2;
+        
+        // Draw curve
+        const path = document.createElementNS('http://www.w3.org/2000/svg', 'path');
+        const controlPointX1 = startX + (endX - startX) * 0.4;
+        const controlPointX2 = startX + (endX - startX) * 0.6;
+        
+        path.setAttribute('d', `M ${startX} ${startY} C ${controlPointX1} ${startY}, ${controlPointX2} ${endY}, ${endX} ${endY}`);
+        path.setAttribute('stroke', '#888');
+        path.setAttribute('stroke-width', '2');
+        path.setAttribute('fill', 'none');
+        path.setAttribute('marker-end', 'url(#arrowhead)');
+        
+        svg.appendChild(path);
+    });
+    
+    // Add arrowhead marker
+    const defs = document.createElementNS('http://www.w3.org/2000/svg', 'defs');
+    const marker = document.createElementNS('http://www.w3.org/2000/svg', 'marker');
+    marker.setAttribute('id', 'arrowhead');
+    marker.setAttribute('markerWidth', '10');
+    marker.setAttribute('markerHeight', '7');
+    marker.setAttribute('refX', '9');
+    marker.setAttribute('refY', '3.5');
+    marker.setAttribute('orient', 'auto');
+    
+    const polygon = document.createElementNS('http://www.w3.org/2000/svg', 'polygon');
+    polygon.setAttribute('points', '0 0, 10 3.5, 0 7');
+    polygon.setAttribute('fill', '#888');
+    
+    marker.appendChild(polygon);
+    defs.appendChild(marker);
+    svg.appendChild(defs);
+    
+    container.appendChild(svg);
+}
+
+// Initialize the graph when the document is loaded
+document.addEventListener('DOMContentLoaded', async () => {
+    try {
+        const graphData = await fetchGraphData();
+        console.log("Graph data loaded:", graphData);
+        
+        const container = document.getElementById('service-graph');
+        if (!container) return;
+        
+        // Set container to position relative
+        container.style.position = 'relative';
+        
+        // Basic grid layout
+        const serviceNode = graphData.nodes.find(node => node.type === 'services');
+        const receivedEvents = graphData.nodes.filter(node => 
+            graphData.edges.some(edge => edge.target === serviceNode.id && edge.source === node.id)
+        );
+        const sentEvents = graphData.nodes.filter(node => 
+            graphData.edges.some(edge => edge.source === serviceNode.id && edge.target === node.id)
+        );
+        
+        // Position nodes
+        const centerX = container.clientWidth / 2 - 75; // half of node width
+        const centerY = container.clientHeight / 2 - 30; // half of node height
+        
+        // Create service node
+        if (serviceNode) {
+            const serviceNodeEl = document.createElement('div');
+            serviceNodeEl.id = `node-${serviceNode.id}`;
+            serviceNodeEl.className = `node ${getNodeTypeClass(serviceNode.type)}`;
+            serviceNodeEl.textContent = getNodeLabel(serviceNode);
+            serviceNodeEl.style.left = centerX + 'px';
+            serviceNodeEl.style.top = centerY + 'px';
+            container.appendChild(serviceNodeEl);
+        }
+        
+        // Create received event nodes
+        receivedEvents.forEach((node, index) => {
+            const nodeEl = document.createElement('div');
+            nodeEl.id = `node-${node.id}`;
+            nodeEl.className = `node ${getNodeTypeClass(node.type)}`;
+            nodeEl.textContent = getNodeLabel(node);
+            nodeEl.style.left = (centerX - 300) + 'px';
+            nodeEl.style.top = (centerY - 200 + index * 100) + 'px';
+            container.appendChild(nodeEl);
+        });
+        
+        // Create sent event nodes
+        sentEvents.forEach((node, index) => {
+            const nodeEl = document.createElement('div');
+            nodeEl.id = `node-${node.id}`;
+            nodeEl.className = `node ${getNodeTypeClass(node.type)}`;
+            nodeEl.textContent = getNodeLabel(node);
+            nodeEl.style.left = (centerX + 300) + 'px';
+            nodeEl.style.top = (centerY - 200 + index * 100) + 'px';
+            container.appendChild(nodeEl);
+        });
+        
+        // Draw edges after all nodes are positioned
+        setTimeout(() => {
+            drawEdges(container, graphData.nodes, graphData.edges);
+        }, 100);
+        
+    } catch (error) {
+        console.error("Error initializing graph:", error);
+        const container = document.getElementById('service-graph');
+        if (container) {
+            container.innerHTML = `<div style="padding: 20px; text-align: center; color: red">
+                Error loading graph: ${error.message}
+            </div>`;
+        }
+    }
+});
+</script>
+{% endblock %}

@@ -1,0 +1,28 @@
+{% extends "base.html" %}
+
+{% block title %}{{ event.name }} - Photosì Event Documentation{% endblock %}
+
+{% block content %}
+<div class="event-page">
+    <div class="event-header">
+        <h1>{{ event.name }}</h1>
+        <span class="event-type">{{ event.type }}</span>
+    </div>
+    
+    <div class="event-description">
+        <p>{{ event.description }}</p>
+    </div>
+    
+    <div class="event-details">
+        <h2>Details</h2>
+        <!-- Placeholder for event details -->
+        <p>This is a placeholder for event details. In a real implementation, this would show the schema and other information about the event.</p>
+    </div>
+    
+    <div class="event-usages">
+        <h2>Usages</h2>
+        <!-- Placeholder for event usages -->
+        <p>This is a placeholder for event usages. In a real implementation, this would show which services send and receive this event.</p>
+    </div>
+</div>
+{% endblock %}
