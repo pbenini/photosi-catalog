@@ -102,7 +102,7 @@ class Service:
                         'data': {
                             'id': event.id,
                             'name': event.name,
-                            'version': self.version
+                            'version': getattr(event, 'version', self.version)  # Use event version if available
                         }
                     }
                 },
@@ -123,7 +123,7 @@ class Service:
                         'data': {
                             'id': event.id,
                             'name': event.name,
-                            'version': self.version
+                            'version': getattr(event, 'version', self.version)  # Use event version if available
                         }
                     }
                 }
@@ -145,7 +145,7 @@ class Service:
                         'data': {
                             'id': event.id,
                             'name': event.name,
-                            'version': self.version
+                            'version': getattr(event, 'version', self.version)  # Use event version if available
                         }
                     }
                 },
@@ -166,7 +166,7 @@ class Service:
                         'data': {
                             'id': event.id,
                             'name': event.name,
-                            'version': self.version
+                            'version': getattr(event, 'version', self.version)  # Use event version if available
                         }
                     }
                 }

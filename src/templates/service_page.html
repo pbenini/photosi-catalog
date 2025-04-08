@@ -24,14 +24,16 @@
     
     .node {
         position: absolute;
-        padding: 10px;
+        padding: 8px 10px;
         border-radius: 5px;
-        color: white;
-        width: 150px;
-        text-align: center;
+        width: 240px;
+        text-align: left;
         transition: all 0.3s ease;
         cursor: pointer;
         box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+        display: flex;
+        flex-direction: column;
+        font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
     }
     
     .node:hover {
@@ -42,26 +44,53 @@
     .service-node {
         background-color: #ff6b6b;
         border: 1px solid #ff5252;
+        color: white;
     }
     
     .message-node {
-        background-color: #51cf66;
-        border: 1px solid #40c057;
+        background-color: white;
+        border: 2px solid #f98131;
+        color: #333;
+        border-left: 16px solid #f98131;
+        padding-left: 14px;
     }
     
     .request-node {
-        background-color: #339af0;
-        border: 1px solid #228be6;
+        background-color: white;
+        border: 2px solid #3cb44b;
+        color: #333;
+        border-left: 16px solid #3cb44b;
+        padding-left: 14px;
     }
     
     .command-node {
         background-color: #fcc419;
         border: 1px solid #fab005;
+        color: white;
     }
     
     .unknown-node {
         background-color: #adb5bd;
         border: 1px solid #868e96;
+        color: white;
+    }
+    
+    .node-title {
+        font-weight: bold;
+        margin-bottom: 4px;
+    }
+    
+    .node-version {
+        font-size: 12px;
+        color: #777;
+    }
+    
+    .node-type {
+        font-size: 12px;
+        position: absolute;
+        right: 10px;
+        top: 10px;
+        color: #666;
     }
     
     .event-sidebar {
@@ -230,9 +259,13 @@ function drawEdges(container, nodes, edges) {
         const containerRect = container.getBoundingClientRect();
         
         // Calculate relative positions
-        const startX = sourceRect.left - containerRect.left + sourceRect.width;
+        const isMessageOrRequest = sourceNode.type === 'messages' || sourceNode.type === 'requests' || 
+                                 targetNode.type === 'messages' || targetNode.type === 'requests';
+        
+        // Adjust connection points based on node type (service connects to middle, events connect to sides)
+        const startX = sourceRect.left - containerRect.left + (sourceNode.type === 'services' ? sourceRect.width/2 : sourceRect.width);
         const startY = sourceRect.top - containerRect.top + sourceRect.height/2;
-        const endX = targetRect.left - containerRect.left;
+        const endX = targetRect.left - containerRect.left + (targetNode.type === 'services' ? targetRect.width/2 : 0);
         const endY = targetRect.top - containerRect.top + targetRect.height/2;
         
         // Draw curve
@@ -294,6 +327,13 @@ document.addEventListener('DOMContentLoaded', async () => {
         // Position nodes
         const centerX = container.clientWidth / 2 - 75; // half of node width
         const centerY = container.clientHeight / 2 - 30; // half of node height
+                
+        // Get node type display name
+        function getNodeTypeDisplay(nodeType) {
+            if (nodeType === 'messages') return 'Message';
+            if (nodeType === 'requests') return 'Request';
+            return nodeType.slice(0, -1); // Remove 's' to get singular form
+        }
         
         // Create service node
         if (serviceNode) {
@@ -315,7 +355,24 @@ document.addEventListener('DOMContentLoaded', async () => {
             const nodeEl = document.createElement('div');
             nodeEl.id = `node-${node.id}`;
             nodeEl.className = `node ${getNodeTypeClass(node.type)}`;
-            nodeEl.textContent = getNodeLabel(node);
+            
+            // Create title element
+            const titleEl = document.createElement('div');
+            titleEl.className = 'node-title';
+            titleEl.textContent = getNodeLabel(node);
+            nodeEl.appendChild(titleEl);
+            
+            // Create version element
+            const versionEl = document.createElement('div');
+            versionEl.className = 'node-version';
+            nodeEl.appendChild(versionEl);
+            
+            // Create type label
+            const typeEl = document.createElement('div');
+            typeEl.className = 'node-type';
+            typeEl.textContent = getNodeTypeDisplay(node.type);
+            nodeEl.appendChild(typeEl);
+            
             nodeEl.style.left = (centerX - 300) + 'px';
             const topPosition = maxEvents <= 1 ? centerY : 50 + (index * verticalSpacing);
             nodeEl.style.top = topPosition + 'px';
@@ -327,7 +384,19 @@ document.addEventListener('DOMContentLoaded', async () => {
             const nodeEl = document.createElement('div');
             nodeEl.id = `node-${node.id}`;
             nodeEl.className = `node ${getNodeTypeClass(node.type)}`;
-            nodeEl.textContent = getNodeLabel(node);
+            
+            // Create title element
+            const titleEl = document.createElement('div');
+            titleEl.className = 'node-title';
+            titleEl.textContent = getNodeLabel(node);
+            nodeEl.appendChild(titleEl);
+            
+            // Create type label
+            const typeEl = document.createElement('div');
+            typeEl.className = 'node-type';
+            typeEl.textContent = getNodeTypeDisplay(node.type);
+            nodeEl.appendChild(typeEl);
+            
             nodeEl.style.left = (centerX + 300) + 'px';
             const topPosition = maxEvents <= 1 ? centerY : 50 + (index * verticalSpacing);
             nodeEl.style.top = topPosition + 'px';

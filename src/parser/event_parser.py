@@ -85,17 +85,28 @@ class EventParser:
             title = message_data.get('title', event_name) if message_data else event_name
             print(f"Parsed event: {event_name} - Title: {title}")
             description = message_data.get('description', '') if message_data else ''
+            
+            # Extract version information
+            version = "1.0.0"  # Default version
+            if message_data and 'version' in message_data:
+                version = message_data['version']
+            elif data.get('info', {}).get('version'):
+                version = data['info']['version']
+                
+            print(f"Event version: {version}")
         except Exception as e:
             print(f"Error parsing event file {event_file}: {e}")
             title = event_name
             description = f"{event_type.capitalize()} {event_name}"
+            version = "1.0.0"
         
         # Create an Event object
         event = Event(
             id=event_name,
             name=title,
             type=event_type,
-            description=description
+            description=description,
+            version=version
         )
         
         return event
