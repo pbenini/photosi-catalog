@@ -107,12 +107,12 @@ class ServiceParser:
                 if '/' in channel_part:
                     event_name = channel_part.split('/')[-1]
                     
-                    # Determine the event type from the name prefix
+                    # Determine the event type from the name prefix or context
                     if event_name.startswith('message'):
                         event_type = 'message'
                     elif event_name.startswith('request'):
                         event_type = 'request'
-                    elif event_name.startswith('command'):
+                    elif event_name.startswith('command') or channel_ref.lower().find('/command/') >= 0 or 'schedule.' in channel_ref.lower():
                         event_type = 'command'
                     else:
                         event_type = 'unknown'

@@ -45,7 +45,7 @@ class EventParser:
             # Set a default type instead of raising an error
             event_type = 'unknown'
         
-        # If type is 'unknown', try all possible types
+        # If type is 'unknown', try all possible types in this order of priority
         types_to_try = ['message', 'request', 'command'] if event_type == 'unknown' else [event_type]
         
         # Try to find the event file with all possible types if unknown
@@ -54,11 +54,24 @@ class EventParser:
             event_file = self._find_event_file(try_type, event_name, directory)
             if event_file:
                 print(f"Found event file for {event_name} with type {try_type}: {event_file}")
+                # If the original type was unknown and we found a file, use this type
+                if original_type == 'unknown':
+                    event_type = try_type
                 break
         
         if not event_file:
+            # If no file found but we're still looking for an unknown type,
+            # let's check if it might be a command by checking all command directories
+            if event_type == 'unknown':
+                command_check = list(self.messages_directory.glob(f"**/command/**/*{event_name}*.yaml"))
+                if command_check:
+                    print(f"Found possible command match for {event_name}: {command_check[0]}")
+                    event_type = 'command'
+            
             # For now just return a basic Event object without details
             print(f"No file found for event: {original_type} {event_name} after trying types: {types_to_try}")
+            # No file was found, but we'll still return an event object
+                
             return Event(
                 id=event_name,
                 name=event_name,
@@ -123,6 +136,21 @@ class EventParser:
         Returns:
             Path: Path to the event file if found, None otherwise.
         """
+        # First, check if the name is a schedule/cron task specifically
+        # Commands are usually in the "command" directory under the service name
+        if event_type == 'unknown' or event_type == 'command':
+            # Look for command files with this name in all service directories
+            command_pattern = f"**/command/**/schedule.{event_name}.yaml"
+            # Also check for other prefixes
+            command_alt_pattern = f"**/command/**/*.{event_name}.yaml"
+            
+            command_matches = list(self.messages_directory.glob(command_pattern))
+            command_matches.extend(self.messages_directory.glob(command_alt_pattern))
+            
+            if command_matches:
+                print(f"Found command file for task {event_name}: {command_matches[0]}")
+                return command_matches[0]
+        
         # Extract potential filename parts from event_name
         # For names like "messagecrmdirectorycreateupdatephotosiuser", extract "createupdatephotosiuser"
         bare_name = event_name

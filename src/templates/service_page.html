@@ -64,9 +64,11 @@
     }
     
     .command-node {
-        background-color: #fcc419;
-        border: 1px solid #fab005;
-        color: white;
+        background-color: white;
+        border: 2px solid #4169e1;
+        color: #333;
+        border-left: 16px solid #4169e1;
+        padding-left: 14px;
     }
     
     .unknown-node {
@@ -259,13 +261,14 @@ function drawEdges(container, nodes, edges) {
         const containerRect = container.getBoundingClientRect();
         
         // Calculate relative positions
-        const isMessageOrRequest = sourceNode.type === 'messages' || sourceNode.type === 'requests' || 
-                                 targetNode.type === 'messages' || targetNode.type === 'requests';
+        const isServiceNode = (type) => type === 'services';
+        const isEventNode = (type) => type === 'messages' || type === 'requests' || type === 'commands';
         
-        // Adjust connection points based on node type (service connects to middle, events connect to sides)
-        const startX = sourceRect.left - containerRect.left + (sourceNode.type === 'services' ? sourceRect.width/2 : sourceRect.width);
+        // Adjust connection points based on node type
+        // Service nodes connect from their center, event nodes connect from their sides
+        const startX = sourceRect.left - containerRect.left + (isServiceNode(sourceNode.type) ? sourceRect.width/2 : sourceRect.width);
         const startY = sourceRect.top - containerRect.top + sourceRect.height/2;
-        const endX = targetRect.left - containerRect.left + (targetNode.type === 'services' ? targetRect.width/2 : 0);
+        const endX = targetRect.left - containerRect.left + (isServiceNode(targetNode.type) ? targetRect.width/2 : 0);
         const endY = targetRect.top - containerRect.top + targetRect.height/2;
         
         // Draw curve
@@ -330,8 +333,9 @@ document.addEventListener('DOMContentLoaded', async () => {
                 
         // Get node type display name
         function getNodeTypeDisplay(nodeType) {
-            if (nodeType === 'messages') return 'Message';
-            if (nodeType === 'requests') return 'Request';
+            if (nodeType === 'messages') return 'Event';
+            if (nodeType === 'requests') return 'Query';
+            if (nodeType === 'commands') return 'Cron';
             return nodeType.slice(0, -1); // Remove 's' to get singular form
         }
         
