@@ -266,15 +266,15 @@ function drawEdges(container, nodes, edges) {
         
         // Adjust connection points based on node type
         // Service nodes connect from their center, event nodes connect from their sides
-        const startX = sourceRect.left - containerRect.left + (isServiceNode(sourceNode.type) ? sourceRect.width/2 : sourceRect.width);
+        const startX = sourceRect.left - containerRect.left + sourceRect.width;
         const startY = sourceRect.top - containerRect.top + sourceRect.height/2;
-        const endX = targetRect.left - containerRect.left + (isServiceNode(targetNode.type) ? targetRect.width/2 : 0);
+        const endX = targetRect.left - containerRect.left;
         const endY = targetRect.top - containerRect.top + targetRect.height/2;
         
         // Draw curve
         const path = document.createElementNS('http://www.w3.org/2000/svg', 'path');
         const controlPointX1 = startX + (endX - startX) * 0.4;
-        const controlPointX2 = startX + (endX - startX) * 0.6;
+        const controlPointX2 = startX - (endX - startX) * 0.4;
         
         path.setAttribute('d', `M ${startX} ${startY} C ${controlPointX1} ${startY}, ${controlPointX2} ${endY}, ${endX} ${endY}`);
         path.setAttribute('stroke', '#888');
