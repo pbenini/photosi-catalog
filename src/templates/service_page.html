@@ -42,9 +42,11 @@
     }
     
     .service-node {
-        background-color: #ff6b6b;
-        border: 1px solid #ff5252;
-        color: white;
+        background-color: white;
+        border: 2px solid #de4c8a;
+        color: #333;
+        border-left: 16px solid #de4c8a;
+        padding-left: 14px;
     }
     
     .message-node {
@@ -173,6 +175,7 @@
 {% endblock %}
 
 {% block scripts %}
+<script src="/static/js/graph-zoom-pan.js"></script>
 <script>
 // Function to fetch graph data
 async function fetchGraphData() {

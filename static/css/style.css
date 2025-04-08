@@ -215,6 +215,33 @@ body {
     fill: #666;
 }
 
+/* Service Graph Zoom and Pan */
+.service-graph {
+    touch-action: none; /* Prevents browser handling of touch actions like pinch-zoom */
+    user-select: none; /* Prevents text selection during drag */
+    overflow: hidden;
+}
+
+.graph-transform-container {
+    will-change: transform;
+    overflow: visible !important;
+}
+
+.graph-controls button {
+    font-family: sans-serif;
+    transition: background-color 0.2s ease, transform 0.1s ease;
+    outline: none;
+}
+
+.graph-controls button:hover {
+    background-color: #f5f5f5;
+}
+
+.graph-controls button:active {
+    background-color: #e0e0e0;
+    transform: scale(0.95);
+}
+
 /* Responsive styles */
 @media (max-width: 768px) {
     .container {
