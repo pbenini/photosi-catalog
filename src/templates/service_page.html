@@ -102,38 +102,40 @@
     </div>
     
     <div class="service-description">
-        <p>Repository: {{ service.description }}</p>
+        <p>{{ service.description }}</p>
     </div>
     
-    <div class="service-graph" id="service-graph"></div>
-    
-    <div class="event-sidebar">
-        <div class="events-received">
-            <h2>Received Events</h2>
-            <ul class="event-list">
-                {% for event in service.received_events %}
-                <li class="event-list-item">
-                    <a href="/events/{{ event.type }}_{{ event.id }}.html">
-                        <strong>{{ event.id }}</strong>
-                        <span class="event-type">({{ event.type }})</span>
-                    </a>
-                </li>
-                {% endfor %}
-            </ul>
-        </div>
+<div class="events-container">
+        <div class="service-graph" id="service-graph"></div>
         
-        <div class="events-sent">
-            <h2>Sent Events</h2>
-            <ul class="event-list">
-                {% for event in service.sent_events %}
-                <li class="event-list-item">
-                    <a href="/events/{{ event.type }}_{{ event.id }}.html">
-                        <strong>{{ event.id }}</strong>
-                        <span class="event-type">({{ event.type }})</span>
-                    </a>
-                </li>
-                {% endfor %}
-            </ul>
+        <div class="event-sidebar">
+            <div class="events-sent">
+                <h2>Sent Events</h2>
+                <ul class="event-list">
+                    {% for event in service.sent_events %}
+                    <li class="event-list-item">
+                        <a href="/events/{{ event.type }}_{{ event.id }}.html">
+                            <strong>{{ event.name }}</strong>
+                            <span class="event-type">({{ event.type }})</span>
+                        </a>
+                    </li>
+                    {% endfor %}
+                </ul>
+            </div>
+            
+            <div class="events-received">
+                <h2>Received Events</h2>
+                <ul class="event-list">
+                    {% for event in service.received_events %}
+                    <li class="event-list-item">
+                        <a href="/events/{{ event.type }}_{{ event.id }}.html">
+                            <strong>{{ event.name }}</strong>
+                            <span class="event-type">({{ event.type }})</span>
+                        </a>
+                    </li>
+                    {% endfor %}
+                </ul>
+            </div>
         </div>
     </div>
 </div>
@@ -178,9 +180,27 @@ function getNodeLabel(node) {
     if (node.type === 'services') {
         return node.data.service.data.name;
     } else if (node.data.message && node.data.message.data) {
+        // First try to use the display_name field which is set by site_generator
+        if (node.data.message.data.display_name) {
+            return truncateText(node.data.message.data.display_name);
+        }
+        // If not available, use the name field which contains the title from the YAML file
         return truncateText(node.data.message.data.name);
     }
-    return truncateText(node.id);
+    // Fallback to ID if name is not available, but remove type prefix
+    let displayId = node.id;
+    // Remove any prefix like "message" or "request" from the ID
+    const prefixes = ['message', 'request', 'command'];
+    for (const prefix of prefixes) {
+        if (displayId.startsWith(prefix)) {
+            displayId = displayId.substring(prefix.length);
+            break;
+        }
+    }
+    // Remove version suffix if present (e.g., "-1.0.0")
+    displayId = displayId.replace(/-\d+\.\d+\.\d+$/, '');
+    
+    return truncateText(displayId);
 }
 
 // Function to draw the edges
@@ -286,6 +306,10 @@ document.addEventListener('DOMContentLoaded', async () => {
             container.appendChild(serviceNodeEl);
         }
         
+        // Calculate spacing based on the number of events
+        const maxEvents = Math.max(receivedEvents.length, sentEvents.length);
+        const verticalSpacing = maxEvents <= 1 ? 0 : (container.clientHeight - 100) / (maxEvents - 1);
+        
         // Create received event nodes
         receivedEvents.forEach((node, index) => {
             const nodeEl = document.createElement('div');
@@ -293,7 +317,8 @@ document.addEventListener('DOMContentLoaded', async () => {
             nodeEl.className = `node ${getNodeTypeClass(node.type)}`;
             nodeEl.textContent = getNodeLabel(node);
             nodeEl.style.left = (centerX - 300) + 'px';
-            nodeEl.style.top = (centerY - 200 + index * 100) + 'px';
+            const topPosition = maxEvents <= 1 ? centerY : 50 + (index * verticalSpacing);
+            nodeEl.style.top = topPosition + 'px';
             container.appendChild(nodeEl);
         });
         
@@ -304,7 +329,8 @@ document.addEventListener('DOMContentLoaded', async () => {
             nodeEl.className = `node ${getNodeTypeClass(node.type)}`;
             nodeEl.textContent = getNodeLabel(node);
             nodeEl.style.left = (centerX + 300) + 'px';
-            nodeEl.style.top = (centerY - 200 + index * 100) + 'px';
+            const topPosition = maxEvents <= 1 ? centerY : 50 + (index * verticalSpacing);
+            nodeEl.style.top = topPosition + 'px';
             container.appendChild(nodeEl);
         });
         

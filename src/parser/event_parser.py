@@ -39,16 +39,26 @@ class EventParser:
             FileNotFoundError: If the event file doesn't exist.
         """
         # Determine the file path based on event type and name
+        original_type = event_type
         if event_type not in ['message', 'request', 'command', 'unknown']:
             print(f"Warning: Unknown event type '{event_type}' for event '{event_name}', proceeding anyway")
             # Set a default type instead of raising an error
             event_type = 'unknown'
         
-        # Find the event file
-        event_file = self._find_event_file(event_type, event_name, directory)
+        # If type is 'unknown', try all possible types
+        types_to_try = ['message', 'request', 'command'] if event_type == 'unknown' else [event_type]
+        
+        # Try to find the event file with all possible types if unknown
+        event_file = None
+        for try_type in types_to_try:
+            event_file = self._find_event_file(try_type, event_name, directory)
+            if event_file:
+                print(f"Found event file for {event_name} with type {try_type}: {event_file}")
+                break
         
         if not event_file:
             # For now just return a basic Event object without details
+            print(f"No file found for event: {original_type} {event_name} after trying types: {types_to_try}")
             return Event(
                 id=event_name,
                 name=event_name,
@@ -56,18 +66,29 @@ class EventParser:
                 description=f"{event_type.capitalize()} {event_name}"
             )
         
-        with open(event_file, 'r', encoding='utf-8') as file:
-            data = yaml.safe_load(file)
+        try:
+            with open(event_file, 'r', encoding='utf-8') as file:
+                data = yaml.safe_load(file)
+                
+            # Debug the YAML content
+            print(f"YAML content for {event_name}: {data}")
+                
+            # Extract event details from the file
+            message_data = None
+            if 'components' in data and 'messages' in data['components']:
+                # Get the first message in the components section
+                message_key = list(data['components']['messages'].keys())[0]
+                message_data = data['components']['messages'][message_key]
+                print(f"Message data for {event_name}: {message_data}")
             
-        # Extract event details from the file
-        message_data = None
-        if 'components' in data and 'messages' in data['components']:
-            # Get the first message in the components section
-            message_key = list(data['components']['messages'].keys())[0]
-            message_data = data['components']['messages'][message_key]
-        
-        title = message_data.get('title', event_name) if message_data else event_name
-        description = message_data.get('description', '') if message_data else ''
+            # Get title from message data, fallback to event_name if not found
+            title = message_data.get('title', event_name) if message_data else event_name
+            print(f"Parsed event: {event_name} - Title: {title}")
+            description = message_data.get('description', '') if message_data else ''
+        except Exception as e:
+            print(f"Error parsing event file {event_file}: {e}")
+            title = event_name
+            description = f"{event_type.capitalize()} {event_name}"
         
         # Create an Event object
         event = Event(
@@ -91,37 +112,81 @@ class EventParser:
         Returns:
             Path: Path to the event file if found, None otherwise.
         """
-        # Build a list of possible file paths to check
-        possible_paths = []
+        # Extract potential filename parts from event_name
+        # For names like "messagecrmdirectorycreateupdatephotosiuser", extract "createupdatephotosiuser"
+        bare_name = event_name
+        potential_directories = []
         
-        # If directory is provided, check there first
-        if directory:
-            possible_paths.append(
-                self.messages_directory / event_type / directory / f"{event_type}.{event_name}.yaml"
-            )
+        # If it starts with a type prefix, strip it off to get potential directory/file parts
+        prefixes = ["message", "request", "command"]
+        for prefix in prefixes:
+            if event_name.lower().startswith(prefix):
+                bare_name = event_name[len(prefix):]
+                break
         
-        # Check directories that match the event name or parts of it
-        name_parts = event_name.split('.')
-        for i in range(len(name_parts)):
-            potential_dir = ".".join(name_parts[:i+1])
-            possible_paths.append(
-                self.messages_directory / event_type / potential_dir / f"{event_type}.{event_name}.yaml"
-            )
+        # Try to find potential directories from the remaining name
+        directories_found = False
+        for i in range(3, len(bare_name)):
+            potential_dir = bare_name[:i]
+            if potential_dir.endswith('directory'):
+                potential_directories.append(potential_dir)
+                file_part = bare_name[i:]
+                directories_found = True
+                print(f"Potential directory: {potential_dir}, file part: {file_part}")
+                
+                # Check if this directory exists
+                dir_path = self.messages_directory / event_type / potential_dir
+                if dir_path.exists():
+                    print(f"Directory exists: {dir_path}")
+                    
+                    # Check all files in this directory
+                    for yaml_file in dir_path.glob("*.yaml"):
+                        print(f"Checking file: {yaml_file}")
+                        try:
+                            with open(yaml_file, 'r', encoding='utf-8') as f:
+                                data = yaml.safe_load(f)
+                                if 'components' in data and 'messages' in data['components']:
+                                    for msg_key in data['components']['messages']:
+                                        if msg_key == event_name:
+                                            print(f"Found matching message ID: {msg_key} in {yaml_file}")
+                                            return yaml_file
+                        except Exception as e:
+                            print(f"Error checking file {yaml_file}: {e}")
         
-        # Also check the direct path
-        possible_paths.append(
-            self.messages_directory / event_type / f"{event_type}.{event_name}.yaml"
-        )
-        
-        # Check if any of the paths exist
-        for path in possible_paths:
-            if path.exists():
-                return path
-        
-        # Try to find the file by globbing
-        pattern = f"**/{event_type}.{event_name}.yaml"
-        matches = list(self.messages_directory.glob(pattern))
-        if matches:
-            return matches[0]
+        # If no directories found in the name, try standard paths
+        if not directories_found:
+            # Build a list of possible file paths to check
+            possible_paths = []
             
+            # If directory is provided, check there first
+            if directory:
+                possible_paths.append(
+                    self.messages_directory / event_type / directory / f"{event_type}.{event_name}.yaml"
+                )
+            
+            # Check the direct path
+            possible_paths.append(
+                self.messages_directory / event_type / f"{event_type}.{event_name}.yaml"
+            )
+            
+            # Check if any of the paths exist
+            for path in possible_paths:
+                if path.exists():
+                    return path
+            
+            # Try to find the file by globbing
+            pattern = f"**/{event_type}.*.yaml"
+            matches = list(self.messages_directory.glob(pattern))
+            for match in matches:
+                try:
+                    with open(match, 'r', encoding='utf-8') as f:
+                        data = yaml.safe_load(f)
+                        if 'components' in data and 'messages' in data['components']:
+                            for msg_key in data['components']['messages']:
+                                if msg_key == event_name:
+                                    print(f"Found matching message ID via glob: {msg_key} in {match}")
+                                    return match
+                except Exception as e:
+                    print(f"Error checking file {match}: {e}")
+                    
         return None

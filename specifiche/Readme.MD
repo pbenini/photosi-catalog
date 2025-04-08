@@ -14,6 +14,8 @@ Gli eventi sono di 3 tipi:
 2) Request: Si definiscono tramite Topic e sono comunicazioni sincrone, ad ogni Request inviata ci si aspetta una Reply (RPC)
 3) Command: Sono operazioni schedulate
 
+**Importante**: I nomi dei messaggi devono essere presi dal campo "title" dell'evento anziché dal campo "id". Ad esempio, se un messaggio ha "title: ErpDirectory:BcCustomersUpdated", questo è il nome che deve essere visualizzato nella UI.
+
 ## Pagine del sito
 Mi aspetto che ci siano questi tipi di pagine:
 - pagine di documentazione

@@ -50,16 +50,38 @@ class SiteGenerator:
         # Collect detailed information about each event
         for event in service.received_events:
             detailed_event = self.event_parser.parse(event.type, event.id)
-            event.name = detailed_event.name
+            event.name = detailed_event.name  # This should contain the title from YAML
             event.description = detailed_event.description
+            print(f"Updated received event: {event.id} -> {event.name}")
             
         for event in service.sent_events:
             detailed_event = self.event_parser.parse(event.type, event.id)
-            event.name = detailed_event.name
+            event.name = detailed_event.name  # This should contain the title from YAML
             event.description = detailed_event.description
+            print(f"Updated sent event: {event.id} -> {event.name}")
             
         # Generate the graph data
         graph_data = service.to_graph_data()
+        
+        # Ensure the display names (titles) are used in the graph
+        for node in graph_data['nodes']:
+            if node['type'] != 'services' and 'data' in node and 'message' in node['data']:
+                message_data = node['data']['message']['data']
+                if 'name' in message_data:
+                    # Make sure the proper title is used for display
+                    if message_data['name'] == message_data['id']:
+                        # If the name is the same as ID, try to format it better
+                        display_name = message_data['id']
+                        # Remove any prefix like "message" or "request" from the ID for display
+                        prefixes = ['message', 'request', 'command']
+                        for prefix in prefixes:
+                            if display_name.lower().startswith(prefix):
+                                display_name = display_name[len(prefix):]
+                                break
+                        message_data['display_name'] = display_name
+                    else:
+                        # Use the proper title name for display
+                        message_data['display_name'] = message_data['name']
         
         # Save the graph data as JSON
         graph_data_path = self.output_directory / 'static' / 'js' / 'graph-data'

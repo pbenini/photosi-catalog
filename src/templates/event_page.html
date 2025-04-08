@@ -4,9 +4,12 @@
 
 {% block content %}
 <div class="event-page">
-    <div class="event-header">
+<div class="event-header">
         <h1>{{ event.name }}</h1>
         <span class="event-type">{{ event.type }}</span>
+        {% if event.name != event.id %}
+        <div class="event-id">ID: {{ event.id }}</div>
+        {% endif %}
     </div>
     
     <div class="event-description">

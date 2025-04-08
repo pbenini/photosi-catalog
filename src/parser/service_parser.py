@@ -64,6 +64,8 @@ class ServiceParser:
             # Extract the event type and name from the channel reference
             event_type, event_name = self._parse_channel_ref(channel_ref)
             
+            print(f"Parsed channel ref: {channel_ref} -> Type: {event_type}, Name: {event_name}")
+            
             # Create an Event object
             event = Event(
                 id=event_name,
@@ -96,7 +98,29 @@ class ServiceParser:
         # Example ref: ../channels/crmdirectory/message.createupdatephotosiuser.yaml#/channels/messagecrmdirectorycreateupdatephotosiuser
         
         try:
-            # Split by '/' and get the last directory and file
+            # First, let's extract the channel name from the end of the ref
+            # This is the most reliable way to get the actual event name
+            if '#' in channel_ref:
+                # Get the part after #
+                channel_part = channel_ref.split('#')[1]
+                # Split by / and get the last part (channel name)
+                if '/' in channel_part:
+                    event_name = channel_part.split('/')[-1]
+                    
+                    # Determine the event type from the name prefix
+                    if event_name.startswith('message'):
+                        event_type = 'message'
+                    elif event_name.startswith('request'):
+                        event_type = 'request'
+                    elif event_name.startswith('command'):
+                        event_type = 'command'
+                    else:
+                        event_type = 'unknown'
+                        
+                    print(f"Successfully parsed channel ref from hash part: {event_type}, {event_name}")
+                    return event_type, event_name
+            
+            # Fallback: try to extract from the file path
             parts = channel_ref.split('/')
             if len(parts) >= 3:
                 event_directory = parts[-2]
@@ -112,24 +136,19 @@ class ServiceParser:
                 else:
                     event_type = 'unknown'
                 
-                # Extract event name by removing the prefix and extension
-                try:
-                    # Try to extract between the first '.' and the last '.'
-                    if '.' in event_file_part:
-                        parts = event_file_part.split('.')
-                        if len(parts) >= 3:
-                            # If we have at least 3 parts (e.g., message.name.yaml)
-                            event_name = parts[1]
-                        else:
-                            # Fallback if format is unexpected
-                            event_name = event_file_part
-                    else:
-                        event_name = event_file_part
-                except Exception:
-                    # Fallback in case of any parsing error
-                    event_name = event_file_part
+                # We need to construct the full event name as it appears in the YAML files
+                # The format seems to be "{type}{directory}{name}"
+                if event_directory and event_file_part:
+                    # Extract the name part (remove type. prefix and .yaml suffix)
+                    name_parts = event_file_part.split('.')
+                    if len(name_parts) >= 3:  # e.g. message.createupdate.yaml
+                        event_name = f"{event_type}{event_directory}{name_parts[1]}"
+                        print(f"Constructed event name: {event_name}")
+                        return event_type, event_name
                 
-                return event_type, event_name
+                # Fallback just return the parts we found
+                print(f"Using fallback parsing for channel ref: {event_type}, {event_file_part}")
+                return event_type, event_file_part
         except Exception as e:
             print(f"Error parsing channel reference '{channel_ref}': {e}")
         
