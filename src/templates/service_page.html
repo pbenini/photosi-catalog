@@ -192,7 +192,7 @@
     </div>
     
     <div class="service-description">
-        <p>{{ service.description }}</p>
+        <p>{{ service.description | safe }}</p>
     </div>
     
 <div class="events-container">
@@ -394,8 +394,8 @@ document.addEventListener('DOMContentLoaded', async () => {
                 
         // Get node type display name
         function getNodeTypeDisplay(nodeType) {
-            if (nodeType === 'messages') return 'Event';
-            if (nodeType === 'requests') return 'Query';
+            if (nodeType === 'messages') return 'Message';
+            if (nodeType === 'requests') return 'Request';
             if (nodeType === 'commands') return 'Cron';
             return nodeType.slice(0, -1); // Remove 's' to get singular form
         }

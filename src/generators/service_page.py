@@ -5,6 +5,7 @@ Generates HTML pages for service documentation.
 
 import os
 import json
+import re
 from pathlib import Path
 from jinja2 import Environment, FileSystemLoader
 
@@ -24,6 +25,25 @@ class ServicePageGenerator:
         templates_dir = Path(__file__).parent.parent / 'templates'
         self.env = Environment(loader=FileSystemLoader(templates_dir))
         
+        # Add custom filter to convert GitHub URLs to links
+        self.env.filters['github_to_link'] = self.github_to_link
+        
+    def github_to_link(self, text):
+        """
+        Convert GitHub URLs in text to HTML links.
+        
+        Args:
+            text (str): The text containing GitHub URLs.
+            
+        Returns:
+            str: Text with GitHub URLs converted to HTML links.
+        """
+        # Pattern to match GitHub URLs
+        pattern = r'(https://github\.com/[\w\-\.]+/[\w\-\.]+(?:\.git)?)'
+        
+        # Replace URLs with HTML links
+        return re.sub(pattern, r'<a href="\1" target="_blank">\1</a>', text)
+        
     def generate(self, service, all_services=None):
         """
         Generate the HTML page for a service.
@@ -39,9 +59,16 @@ class ServicePageGenerator:
         services_dir = self.output_directory / 'services'
         os.makedirs(services_dir, exist_ok=True)
         
+        # Get service dictionary
+        service_dict = service.to_dict()
+        
+        # Process description to convert GitHub URLs to links
+        if 'description' in service_dict:
+            service_dict['description'] = self.github_to_link(service_dict['description'])
+        
         # Prepare the context for the template
         context = {
-            'service': service.to_dict(),
+            'service': service_dict,
             'graph_data_url': f'/static/js/graph-data/{service.id}.json',
             'all_services': all_services or []
         }

@@ -53,7 +53,6 @@ class EventParser:
         for try_type in types_to_try:
             event_file = self._find_event_file(try_type, event_name, directory)
             if event_file:
-                print(f"Found event file for {event_name} with type {try_type}: {event_file}")
                 # If the original type was unknown and we found a file, use this type
                 if original_type == 'unknown':
                     event_type = try_type
@@ -65,7 +64,6 @@ class EventParser:
             if event_type == 'unknown':
                 command_check = list(self.messages_directory.glob(f"**/command/**/*{event_name}*.yaml"))
                 if command_check:
-                    print(f"Found possible command match for {event_name}: {command_check[0]}")
                     event_type = 'command'
             
             # For now just return a basic Event object without details
@@ -84,7 +82,6 @@ class EventParser:
                 data = yaml.safe_load(file)
                 
             # Debug the YAML content
-            print(f"YAML content for {event_name}: {data}")
                 
             # Extract event details from the file
             message_data = None
@@ -92,11 +89,9 @@ class EventParser:
                 # Get the first message in the components section
                 message_key = list(data['components']['messages'].keys())[0]
                 message_data = data['components']['messages'][message_key]
-                print(f"Message data for {event_name}: {message_data}")
             
             # Get title from message data, fallback to event_name if not found
             title = message_data.get('title', event_name) if message_data else event_name
-            print(f"Parsed event: {event_name} - Title: {title}")
             description = message_data.get('description', '') if message_data else ''
             
             # Extract version information
@@ -106,7 +101,6 @@ class EventParser:
             elif data.get('info', {}).get('version'):
                 version = data['info']['version']
                 
-            print(f"Event version: {version}")
         except Exception as e:
             print(f"Error parsing event file {event_file}: {e}")
             title = event_name
@@ -148,7 +142,6 @@ class EventParser:
             command_matches.extend(self.messages_directory.glob(command_alt_pattern))
             
             if command_matches:
-                print(f"Found command file for task {event_name}: {command_matches[0]}")
                 return command_matches[0]
         
         # Extract potential filename parts from event_name
@@ -170,24 +163,18 @@ class EventParser:
             if potential_dir.endswith('directory'):
                 potential_directories.append(potential_dir)
                 file_part = bare_name[i:]
-                directories_found = True
-                print(f"Potential directory: {potential_dir}, file part: {file_part}")
-                
+                directories_found = True                
                 # Check if this directory exists
                 dir_path = self.messages_directory / event_type / potential_dir
-                if dir_path.exists():
-                    print(f"Directory exists: {dir_path}")
-                    
+                if dir_path.exists():                    
                     # Check all files in this directory
                     for yaml_file in dir_path.glob("*.yaml"):
-                        print(f"Checking file: {yaml_file}")
                         try:
                             with open(yaml_file, 'r', encoding='utf-8') as f:
                                 data = yaml.safe_load(f)
                                 if 'components' in data and 'messages' in data['components']:
                                     for msg_key in data['components']['messages']:
                                         if msg_key == event_name:
-                                            print(f"Found matching message ID: {msg_key} in {yaml_file}")
                                             return yaml_file
                         except Exception as e:
                             print(f"Error checking file {yaml_file}: {e}")
@@ -223,7 +210,6 @@ class EventParser:
                         if 'components' in data and 'messages' in data['components']:
                             for msg_key in data['components']['messages']:
                                 if msg_key == event_name:
-                                    print(f"Found matching message ID via glob: {msg_key} in {match}")
                                     return match
                 except Exception as e:
                     print(f"Error checking file {match}: {e}")

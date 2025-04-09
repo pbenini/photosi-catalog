@@ -56,14 +56,12 @@ class SiteGenerator:
             event.name = detailed_event.name  # This should contain the title from YAML
             event.description = detailed_event.description
             event.version = detailed_event.version  # Add version information
-            print(f"Updated received event: {event.id} -> {event.name} (v{event.version})")
             
         for event in service.sent_events:
             detailed_event = self.event_parser.parse(event.type, event.id)
             event.name = detailed_event.name  # This should contain the title from YAML
             event.description = detailed_event.description
             event.version = detailed_event.version  # Add version information
-            print(f"Updated sent event: {event.id} -> {event.name} (v{event.version})")
             
         # Generate the graph data
         graph_data = service.to_graph_data()

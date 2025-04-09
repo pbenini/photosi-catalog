@@ -63,9 +63,7 @@ class ServiceParser:
             
             # Extract the event type and name from the channel reference
             event_type, event_name = self._parse_channel_ref(channel_ref)
-            
-            print(f"Parsed channel ref: {channel_ref} -> Type: {event_type}, Name: {event_name}")
-            
+                        
             # Create an Event object
             event = Event(
                 id=event_name,
@@ -117,7 +115,6 @@ class ServiceParser:
                     else:
                         event_type = 'unknown'
                         
-                    print(f"Successfully parsed channel ref from hash part: {event_type}, {event_name}")
                     return event_type, event_name
             
             # Fallback: try to extract from the file path
@@ -143,7 +140,6 @@ class ServiceParser:
                     name_parts = event_file_part.split('.')
                     if len(name_parts) >= 3:  # e.g. message.createupdate.yaml
                         event_name = f"{event_type}{event_directory}{name_parts[1]}"
-                        print(f"Constructed event name: {event_name}")
                         return event_type, event_name
                 
                 # Fallback just return the parts we found
