@@ -102,18 +102,11 @@ class EventParser:
                 for _, msg_data in data['components']['messages'].items():
                     if msg_data.get('title') == event_name:
                         description = msg_data.get('description', '')
-                        version = msg_data.get('version', "1.0.0")
                         break
                 
         except Exception as e:
             print(f"Error parsing event file {event_file}: {e}")
-            # Return a basic Event object on error
-            return Event(
-                id=event_name,
-                name=event_name,  # Name is already in Directory:Topic format
-                type=event_type,
-                description=f"{event_type.capitalize()} {event_name}"
-            )
+            # TODO: skip or exit
         
         # Create an Event object
         event = Event(
@@ -121,7 +114,6 @@ class EventParser:
             name=event_name,  # Name is already in Directory:Topic format
             type=event_type,
             description=description,
-            version=version
         )
         
         return event

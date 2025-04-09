@@ -6,7 +6,7 @@ Defines the Service class representing a service in the AsyncAPI specification.
 class Service:
     """Represents a service in the AsyncAPI specification."""
     
-    def __init__(self, id, title, description, version="1.0.0"):
+    def __init__(self, id, title, description):
         """
         Initialize a service.
         
@@ -14,12 +14,10 @@ class Service:
             id (str): Unique identifier for the service.
             title (str): Display title for the service.
             description (str): Detailed description of the service.
-            version (str, optional): Version of the service. Defaults to "1.0.0".
         """
         self.id = id
         self.title = title
         self.description = description
-        self.version = version
         self.received_events = []
         self.sent_events = []
         
@@ -56,7 +54,6 @@ class Service:
             'id': self.id,
             'title': self.title,
             'description': self.description,
-            'version': self.version,
             'received_events': [event.to_dict() for event in self.received_events],
             'sent_events': [event.to_dict() for event in self.sent_events]
         }
@@ -73,7 +70,7 @@ class Service:
         
         # Add the service node
         service_node = {
-            'id': f"{self.id}-{self.version}",
+            'id': f"{self.id}",
             'type': 'services',
             'data': {
                 'service': {
@@ -81,7 +78,6 @@ class Service:
                     'data': {
                         'id': self.id,
                         'name': self.title,
-                        'version': self.version
                     }
                 }
             },
@@ -93,7 +89,7 @@ class Service:
         y_position = 50
         for event in self.received_events:
             event_node = {
-                'id': f"{event.id}-{event.type}-{self.version}",
+                'id': f"{event.id}-{event.type}",
                 'type': event.type + 's',  # pluralize the type
                 'data': {
                     'mode': 'full',
@@ -102,7 +98,6 @@ class Service:
                         'data': {
                             'id': event.id,
                             'name': event.name,
-                            'version': getattr(event, 'version', self.version)  # Use event version if available
                         }
                     }
                 },
@@ -112,9 +107,9 @@ class Service:
             
             # Add edge from event to service
             edge = {
-                'id': f"{event.id}-{event.type}-{self.version}-{self.id}-{self.version}",
-                'source': f"{event.id}-{event.type}-{self.version}",
-                'target': f"{self.id}-{self.version}",
+                'id': f"{event.id}-{event.type}-{self.id}",
+                'source': f"{event.id}-{event.type}",
+                'target': f"{self.id}",
                 'label': 'accepts',
                 'animated': False,
                 'data': {
@@ -123,7 +118,6 @@ class Service:
                         'data': {
                             'id': event.id,
                             'name': event.name,
-                            'version': getattr(event, 'version', self.version)  # Use event version if available
                         }
                     }
                 }
@@ -136,7 +130,7 @@ class Service:
         y_position = 50
         for event in self.sent_events:
             event_node = {
-                'id': f"{event.id}-{event.type}-{self.version}",
+                'id': f"{event.id}-{event.type}",
                 'type': event.type + 's',  # pluralize the type
                 'data': {
                     'mode': 'full',
@@ -145,7 +139,6 @@ class Service:
                         'data': {
                             'id': event.id,
                             'name': event.name,
-                            'version': getattr(event, 'version', self.version)  # Use event version if available
                         }
                     }
                 },
@@ -155,9 +148,9 @@ class Service:
             
             # Add edge from service to event
             edge = {
-                'id': f"{self.id}-{self.version}-{event.id}-{event.type}-{self.version}",
-                'source': f"{self.id}-{self.version}",
-                'target': f"{event.id}-{event.type}-{self.version}",
+                'id': f"{self.id}-{event.id}-{event.type}",
+                'source': f"{self.id}",
+                'target': f"{event.id}-{event.type}",
                 'label': 'publishes',
                 'animated': False,
                 'data': {
@@ -166,7 +159,6 @@ class Service:
                         'data': {
                             'id': event.id,
                             'name': event.name,
-                            'version': getattr(event, 'version', self.version)  # Use event version if available
                         }
                     }
                 }

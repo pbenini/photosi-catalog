@@ -181,11 +181,6 @@
         margin-bottom: 4px;
     }
     
-    .node-version {
-        font-size: 12px;
-        color: #777;
-    }
-    
     .node-type {
         font-size: 12px;
         position: absolute;
@@ -337,8 +332,6 @@ function getNodeLabel(node) {
             break;
         }
     }
-    // Remove version suffix if present (e.g., "-1.0.0")
-    displayId = displayId.replace(/-\d+\.\d+\.\d+$/, '');
     
     return truncateText(displayId);
 }
@@ -474,11 +467,6 @@ document.addEventListener('DOMContentLoaded', async () => {
             titleEl.className = 'node-title';
             titleEl.textContent = getNodeLabel(node);
             nodeEl.appendChild(titleEl);
-            
-            // Create version element
-            const versionEl = document.createElement('div');
-            versionEl.className = 'node-version';
-            nodeEl.appendChild(versionEl);
             
             // Create type label
             const typeEl = document.createElement('div');

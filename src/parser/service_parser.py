@@ -49,7 +49,6 @@ class ServiceParser:
             id=service_name,
             title=data.get('info', {}).get('title', service_name),
             description=data.get('info', {}).get('description', ''),
-            version=data.get('info', {}).get('version', '1.0.0')
         )
         
         # Process operations (events received and sent)
