@@ -29,6 +29,12 @@ pip install -r requirements.txt
 python src/main.py --input /path/to/asyncapi-files --output /path/to/output
 ```
 
+Per verificare l'output generato è possibile eseguire il seguente comando
+```bash
+cd /path/to/output && python -m http.server 8000
+```
+Quindi aprire il browser all'indirizzo http://localhost:8000
+
 ## Struttura del progetto
 
 ```

@@ -1,5 +1,8 @@
 asyncapi-files
 dest
+dist
 venv
+.venv
 output
-*/__pycache__
+**.pyc
+**/__pycache__
