@@ -96,55 +96,91 @@ class ServiceParser:
         # Example ref: ../channels/crmdirectory/message.createupdatephotosiuser.yaml#/channels/messagecrmdirectorycreateupdatephotosiuser
         
         try:
-            # First, let's extract the channel name from the end of the ref
-            # This is the most reliable way to get the actual event name
-            if '#' in channel_ref:
-                # Get the part after #
-                channel_part = channel_ref.split('#')[1]
-                # Split by / and get the last part (channel name)
-                if '/' in channel_part:
-                    event_name = channel_part.split('/')[-1]
-                    
-                    # Determine the event type from the name prefix or context
-                    if event_name.startswith('message'):
-                        event_type = 'message'
-                    elif event_name.startswith('request'):
-                        event_type = 'request'
-                    elif event_name.startswith('command') or channel_ref.lower().find('/command/') >= 0 or 'schedule.' in channel_ref.lower():
-                        event_type = 'command'
-                    else:
-                        event_type = 'unknown'
-                        
-                    return event_type, event_name
-            
-            # Fallback: try to extract from the file path
+            # Determine the event type from the reference path
+            event_type = 'unknown'
+            if 'message.' in channel_ref or '/message/' in channel_ref:
+                event_type = 'message'
+            elif 'request.' in channel_ref or '/request/' in channel_ref:
+                event_type = 'request'
+            elif 'command.' in channel_ref or '/command/' in channel_ref or 'schedule.' in channel_ref:
+                event_type = 'command'
+                
+            # Try to extract directory name from the path
             parts = channel_ref.split('/')
-            if len(parts) >= 3:
-                event_directory = parts[-2]
-                event_file_part = parts[-1].split('#')[0] if '#' in parts[-1] else parts[-1]
+            directory_name = None
+            for i, part in enumerate(parts):
+                # Look for a directory that might contain 'directory' in its name
+                if 'directory' in part.lower() and i < len(parts) - 1:
+                    directory_name = part
+                    
+            # If we couldn't find a directory name, use a fallback
+            if not directory_name:
+                if len(parts) >= 3:
+                    directory_name = parts[-2]
+                    
+            # Format the directory name with proper casing - capitalize each word
+            if directory_name:
+                # Handle special case where directory is all lowercase
+                if directory_name.islower() and 'directory' in directory_name:
+                    # Split camelCase if needed
+                    directory_name = ''.join(word.capitalize() for word in directory_name.split('_'))
+                    # Make sure "Directory" is properly capitalized at the end
+                    if directory_name.lower().endswith('directory'):
+                        directory_name = directory_name[:-9] + "Directory"
+            
+            # Try to find the topic part (what comes after the Directory name)
+            topic_name = None
+            
+            # First check if there's a .yaml file name with message.something.yaml pattern
+            for part in parts:
+                if '.yaml' in part and '.' in part:
+                    file_parts = part.split('.')
+                    if len(file_parts) >= 3:  # like message.createupdate.yaml
+                        topic_name = file_parts[1].capitalize()  # Capitalize topic
+                        break
+            
+            # If we have both directory and topic, create the "Directory:Topic" format
+            if directory_name and topic_name:
+                # Make sure directory ends with "Directory"
+                if not directory_name.lower().endswith('directory'):
+                    directory_name = directory_name + "Directory"
+                    
+                # Build the event name in Directory:Topic format
+                event_name = f"{directory_name}:{topic_name}"
+                return event_type, event_name
+            
+            # Fallback: try to extract from the channel part after #
+            if '#' in channel_ref:
+                channel_part = channel_ref.split('#')[1]
+                if '/' in channel_part:
+                    raw_name = channel_part.split('/')[-1]
+                    
+                    # Try to identify the directory and topic parts
+                    if directory_name:
+                        # Remove the type prefix (message, request, command)
+                        if raw_name.startswith(event_type):
+                            raw_name = raw_name[len(event_type):]
+                        
+                        # Find the part that could be the directory
+                        directory_part = None
+                        if directory_name.lower() in raw_name.lower():
+                            directory_part = directory_name
+                        
+                        if directory_part:
+                            # Extract the topic part (everything after the directory)
+                            lower_dir = directory_part.lower()
+                            lower_raw = raw_name.lower()
+                            start_idx = lower_raw.find(lower_dir) + len(lower_dir)
+                            topic_part = raw_name[start_idx:].capitalize()
+                            
+                            if topic_part:
+                                # Build the event name in Directory:Topic format
+                                return event_type, f"{directory_name}:{topic_part}"
+            
+            # Last fallback: just return what we have
+            print(f"Warning: Could not fully parse channel reference: {channel_ref}")
+            return event_type, channel_ref.split('/')[-1].split('.')[0]
                 
-                # Extract event type (message, request, command)
-                if 'message.' in event_file_part:
-                    event_type = 'message'
-                elif 'request.' in event_file_part:
-                    event_type = 'request'
-                elif 'command.' in event_file_part:
-                    event_type = 'command'
-                else:
-                    event_type = 'unknown'
-                
-                # We need to construct the full event name as it appears in the YAML files
-                # The format seems to be "{type}{directory}{name}"
-                if event_directory and event_file_part:
-                    # Extract the name part (remove type. prefix and .yaml suffix)
-                    name_parts = event_file_part.split('.')
-                    if len(name_parts) >= 3:  # e.g. message.createupdate.yaml
-                        event_name = f"{event_type}{event_directory}{name_parts[1]}"
-                        return event_type, event_name
-                
-                # Fallback just return the parts we found
-                print(f"Using fallback parsing for channel ref: {event_type}, {event_file_part}")
-                return event_type, event_file_part
         except Exception as e:
             print(f"Error parsing channel reference '{channel_ref}': {e}")
         

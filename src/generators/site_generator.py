@@ -6,6 +6,7 @@ Coordinates the generation of the entire documentation site.
 import os
 import json
 from pathlib import Path
+from collections import defaultdict
 
 from parser.service_parser import ServiceParser
 from parser.event_parser import EventParser
@@ -34,6 +35,44 @@ class SiteGenerator:
         self.service_page_generator = ServicePageGenerator(output_directory)
         self.event_page_generator = EventPageGenerator(output_directory)
         
+        # Cache for all events and their relations
+        self.event_relations = None
+        
+    def _collect_event_relations(self):
+        """
+        Collect relationships between events and services.
+        This builds a mapping of events to the services that publish or consume them.
+        
+        Returns:
+            dict: Dictionary mapping events to publishing and consuming services.
+        """
+        if self.event_relations is not None:
+            return self.event_relations
+            
+        event_relations = defaultdict(lambda: {'publishing_services': [], 'consuming_services': []})
+        
+        # Get all services and their events
+        service_names = self.service_parser.list_all_services()
+        for service_name in service_names:
+            service = self.service_parser.parse(service_name)
+            
+            # Add to publishing services for each sent event
+            for event in service.sent_events:
+                # Use event.name (which should be title) instead of event.id for better matching with YAML files
+                event_key = (event.type, event.name)
+                if service not in event_relations[event_key]['publishing_services']:
+                    event_relations[event_key]['publishing_services'].append(service)
+            
+            # Add to consuming services for each received event
+            for event in service.received_events:
+                # Use event.name (which should be title) instead of event.id for better matching with YAML files
+                event_key = (event.type, event.name)
+                if service not in event_relations[event_key]['consuming_services']:
+                    event_relations[event_key]['consuming_services'].append(service)
+        
+        self.event_relations = event_relations
+        return event_relations
+    
     def generate_service_page(self, service_name):
         """
         Generate the documentation page for a service.
@@ -101,18 +140,71 @@ class SiteGenerator:
         Generate the documentation page for an event.
         
         Args:
-            event_type (str): Type of the event (message, request, command).
+            event_type (str): Type of the event (message, request).
             event_name (str): Name of the event to generate documentation for.
             
         Returns:
             str: Path to the generated event page.
         """
+        # Collect event relationships
+        event_relations = self._collect_event_relations()
+        
         # Parse the event
         event = self.event_parser.parse(event_type, event_name)
         
-        # Generate the event page
-        return self.event_page_generator.generate(event)
+        # Get publishing and consuming services for this event
+        event_key = (event_type, event_name)
+        publishing_services = []
+        consuming_services = []
         
+        # Check if this event is in our relations database
+        if event_key in event_relations:
+            publishing_services = event_relations[event_key]['publishing_services']
+            consuming_services = event_relations[event_key]['consuming_services']
+        
+        # Get all events for the sidebar
+        all_events = sorted([(event_type, event_id) for event_type, event_id in event_relations.keys()], 
+                            key=lambda x: x[1])  # Sort by event ID
+        
+        # Generate graph data for this event
+        graph_data = event.to_graph_data(publishing_services, consuming_services)
+        
+        # Save the graph data as JSON - use a safe version of the event name for the filename
+        graph_data_path = self.output_directory / 'static' / 'js' / 'graph-data'
+        os.makedirs(graph_data_path, exist_ok=True)
+        
+        # Use a safe version of the event name - replace : and . with _
+        safe_id = event.name.replace(":", "_").replace(".", "_")
+        with open(graph_data_path / f"{event_type}_{safe_id}.json", 'w', encoding='utf-8') as f:
+            json.dump(graph_data, f, indent=2)
+        
+        # Generate the event page
+        return self.event_page_generator.generate(
+            event, 
+            publishing_services=publishing_services, 
+            consuming_services=consuming_services,
+            all_events=all_events
+        )
+        
+    def collect_all_events(self):
+        """
+        Collect all events from the input directory.
+        
+        Returns:
+            list: List of tuples (event_type, event_id) for all events.
+        """
+        # First collect events from services
+        event_relations = self._collect_event_relations()
+        events_from_services = list(event_relations.keys())
+        
+        # Then collect events directly from the parser
+        events_from_files = self.event_parser.list_all_events()
+        
+        # Merge the two lists removing duplicates
+        all_events = list(set(events_from_services + events_from_files))
+        
+        return all_events
+    
     def generate_all(self):
         """
         Generate documentation for all services and events.
@@ -129,5 +221,11 @@ class SiteGenerator:
         for service_name in services:
             service_page = self.generate_service_page(service_name)
             generated_pages.append(service_page)
+        
+        # Generate pages for all events
+        all_events = self.collect_all_events()
+        for event_type, event_name in all_events:
+            event_page = self.generate_event_page(event_type, event_name)
+            generated_pages.append(event_page)
             
         return generated_pages

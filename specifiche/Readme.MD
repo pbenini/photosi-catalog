@@ -76,7 +76,7 @@ L'implementazione deve attenersi rigorosamente a questi principi
 - puoi lavorare in questa folder
 - non implementare funzionalità su casi d'uso ipotetici
 - il catalogo è in sola lettura, ci saranno dei link per navigare tra le pagine ma NESSUN FORM per inserire nuovi messaggi/servizi o modifica di quello che c'è
-- *Non inventare e non cercare di indovinare*: stiamo parlando di un portale di generazione del catalogo partendo dalla documentazione che ricevi in input, tutte le informazioni rappresentate devono essere lette dalla documentazione in input, se non trovi qualcosa dimmelo
+- **Non inventare e non cercare di indovinare**: stiamo parlando di un portale di generazione del catalogo partendo dalla documentazione che ricevi in input, tutte le informazioni rappresentate devono essere lette dalla documentazione in input, se non trovi qualcosa dimmelo
 
 Voglio cambiare la generazione della documentazione dei servizi:
 il comportamento di default è di creare la pagina di documentazione di ogni servizio che trovi nella cartella services.
@@ -91,3 +91,12 @@ Nel template della pagina del servizio voglio che modifichi l'elemento "event-si
 Va diviso in 2 elementi: received-event-sidebar e sent-event-sidebar.
 sent-event-sidebar lo posizioni a destra di service-graph
 received-event-sidebar lo posizioni a sinistra di service-graph
+
+Voglio generare la documentazione degli eventi
+Voglio applicare lo stesso pattern della documentazione dei servizi
+Voglio un template unico che viene renderizzato nella cartella events del percorso di destinazione
+Ogni evento avrà il suo file html
+Utilizza il layout dei servizi ti elenco le differenze:
+Il soggetto di questa pagina è l'evento quindi avrai a sinistra l'elenco di servizi che lo pubblicano, a destra l'elenco dei servizi che lo consumano.
+Il grafico segue questa rappresentazione
+Voglio che per crare il grafico dell'evento vengano usati gli stessi componenti utilizzati per il grafico del servizio.

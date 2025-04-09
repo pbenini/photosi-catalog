@@ -202,7 +202,7 @@
             <ul class="event-list">
                 {% for event in service.received_events %}
                 <li class="event-list-item">
-                    <a href="/events/{{ event.type }}_{{ event.id }}.html">
+                    <a href="/events/{{ event.type }}_{{ event.name|replace(':', '_')|replace('.', '_') }}.html">
                         <strong>{{ event.name }}</strong>
                         <span class="event-type">({{ event.type }})</span>
                     </a>
@@ -220,7 +220,7 @@
             <ul class="event-list">
                 {% for event in service.sent_events %}
                 <li class="event-list-item">
-                    <a href="/events/{{ event.type }}_{{ event.id }}.html">
+                    <a href="/events/{{ event.type }}_{{ event.name|replace(':', '_')|replace('.', '_') }}.html">
                         <strong>{{ event.name }}</strong>
                         <span class="event-type">({{ event.type }})</span>
                     </a>
