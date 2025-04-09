@@ -69,10 +69,50 @@
         margin-left: 5px;
     }
     
-    .service-graph {
+    /* Nuova struttura per il layout a tre colonne */
+    .flow-layout {
+        display: grid;
+        grid-template-columns: 250px 1fr 250px;
+        grid-gap: 20px;
+        margin-bottom: 30px;
+    }
+    
+    .in-flow {
+        background-color: #f9f9f9;
+        border-radius: 5px;
+        border: 1px solid #ddd;
+        padding: 0;
+        overflow: hidden;
+        max-height: 600px;
+        display: flex;
+        flex-direction: column;
+    }
+    
+    .out-flow {
+        background-color: #f9f9f9;
+        border-radius: 5px;
+        border: 1px solid #ddd;
+        padding: 0;
+        overflow: hidden;
+        max-height: 600px;
+        display: flex;
+        flex-direction: column;
+    }
+    
+    .service-section-header {
+        font-size: 20px;
+        margin: 0;
+        padding: 20px;
+        border-bottom: 1px solid #ddd;
+        background-color: #f9f9f9;
+        position: sticky;
+        top: 0;
+        z-index: 10;
+    }
+    
+    .flow-graph {
         width: 100%;
         height: 600px;
-        margin-bottom: 30px;
         border: 1px solid #ddd;
         border-radius: 4px;
         position: relative;
@@ -154,15 +194,11 @@
         color: #666;
     }
     
-    .event-sidebar {
-        background-color: #f9f9f9;
-        padding: 20px;
-        border-radius: 5px;
-    }
-    
     .event-list {
         list-style: none;
-        padding: 0;
+        padding: 0 20px 20px 20px;
+        overflow-y: auto;
+        flex-grow: 1;
     }
     
     .event-list-item {
@@ -182,6 +218,18 @@
     .event-list-item a:hover {
         background-color: #f0f0f0;
     }
+    
+    /* Responsive design */
+    @media (max-width: 1200px) {
+        .flow-layout {
+            grid-template-columns: 1fr;
+            grid-template-rows: auto auto auto;
+        }
+        
+        .in-flow, .out-flow {
+            max-height: 300px;
+        }
+    }
 </style>
 {% endblock %}
 
@@ -195,10 +243,10 @@
         <p>{{ service.description | safe }}</p>
     </div>
     
-<div class="events-container">
-        <!-- Received Events Sidebar -->
-        <div class="event-sidebar received-event-sidebar">
-            <h2>Received Events</h2>
+    <div class="flow-layout">
+        <!-- In Flow (left sidebar) -->
+        <div class="in-flow">
+            <h2 class="service-section-header">In Flow</h2>
             <ul class="event-list">
                 {% for event in service.received_events %}
                 <li class="event-list-item">
@@ -211,12 +259,12 @@
             </ul>
         </div>
         
-        <!-- Service Graph -->
-        <div class="service-graph" id="service-graph"></div>
+        <!-- Flow Graph (center) -->
+        <div class="flow-graph" id="flow-graph"></div>
         
-        <!-- Sent Events Sidebar -->
-        <div class="event-sidebar sent-event-sidebar">
-            <h2>Sent Events</h2>
+        <!-- Out Flow (right sidebar) -->
+        <div class="out-flow">
+            <h2 class="service-section-header">Out Flow</h2>
             <ul class="event-list">
                 {% for event in service.sent_events %}
                 <li class="event-list-item">
@@ -373,7 +421,7 @@ document.addEventListener('DOMContentLoaded', async () => {
         const graphData = await fetchGraphData();
         console.log("Graph data loaded:", graphData);
         
-        const container = document.getElementById('service-graph');
+        const container = document.getElementById('flow-graph');
         if (!container) return;
         
         // Set container to position relative
@@ -475,7 +523,7 @@ document.addEventListener('DOMContentLoaded', async () => {
         
     } catch (error) {
         console.error("Error initializing graph:", error);
-        const container = document.getElementById('service-graph');
+        const container = document.getElementById('flow-graph');
         if (container) {
             container.innerHTML = `<div style="padding: 20px; text-align: center; color: red">
                 Error loading graph: ${error.message}

@@ -5,6 +5,7 @@ Coordinates the generation of the entire documentation site.
 
 import os
 import json
+import yaml
 from pathlib import Path
 from collections import defaultdict
 
@@ -51,6 +52,30 @@ class SiteGenerator:
             
         event_relations = defaultdict(lambda: {'publishing_services': [], 'consuming_services': []})
         
+        # First collect all event titles and message containers from YAML files
+        event_titles_to_containers = {}
+        message_containers_to_titles = {}
+        
+        # Parse all events to build a lookup map between titles and containers
+        for event_type in ['message', 'request', 'command']:
+            type_dir = self.input_directory / "messages" / event_type
+            if type_dir.exists():
+                for directory in type_dir.iterdir():
+                    if directory.is_dir():
+                        for yaml_file in directory.glob("*.yaml"):
+                            try:
+                                with open(yaml_file, 'r', encoding='utf-8') as f:
+                                    data = yaml.safe_load(f)
+                                    if 'components' in data and 'messages' in data['components']:
+                                        for container_id, msg_data in data['components']['messages'].items():
+                                            if 'title' in msg_data:
+                                                title = msg_data['title']
+                                                # Store mappings in both directions
+                                                event_titles_to_containers[(event_type, title)] = container_id
+                                                message_containers_to_titles[container_id] = (event_type, title)
+                            except Exception as e:
+                                print(f"Error parsing event file {yaml_file}: {e}")
+        
         # Get all services and their events
         service_names = self.service_parser.list_all_services()
         for service_name in service_names:
@@ -58,18 +83,67 @@ class SiteGenerator:
             
             # Add to publishing services for each sent event
             for event in service.sent_events:
-                # Use event.name (which should be title) instead of event.id for better matching with YAML files
+                # Try to map to a proper title if possible
                 event_key = (event.type, event.name)
+                
+                # If event.id is a container ID, look it up
+                if event.id in message_containers_to_titles:
+                    event_key = message_containers_to_titles[event.id]
+                
                 if service not in event_relations[event_key]['publishing_services']:
                     event_relations[event_key]['publishing_services'].append(service)
             
             # Add to consuming services for each received event
             for event in service.received_events:
-                # Use event.name (which should be title) instead of event.id for better matching with YAML files
+                # Try to map to a proper title if possible
                 event_key = (event.type, event.name)
+                
+                # If event.id is a container ID, look it up
+                if event.id in message_containers_to_titles:
+                    event_key = message_containers_to_titles[event.id]
+                
                 if service not in event_relations[event_key]['consuming_services']:
                     event_relations[event_key]['consuming_services'].append(service)
         
+        # Now try to find additional relations by looking through service files directly
+        for service_name in service_names:
+            service_file = self.input_directory / "services" / f"{service_name}.yaml"
+            if service_file.exists():
+                try:
+                    with open(service_file, 'r', encoding='utf-8') as f:
+                        data = yaml.safe_load(f)
+                        if 'operations' in data:
+                            for op_name, op_data in data['operations'].items():
+                                # Get the action (send or receive)
+                                action = op_data.get('action')
+                                
+                                # Get the channel reference
+                                channel_ref = op_data.get('channel', {}).get('$ref', '')
+                                
+                                # Look for container IDs in the reference
+                                if '#' in channel_ref:
+                                    parts = channel_ref.split('#')
+                                    for part in parts:
+                                        for container_id in message_containers_to_titles:
+                                            if container_id in part:
+                                                event_key = message_containers_to_titles[container_id]
+                                                service = self.service_parser.parse(service_name)
+                                                
+                                                if action == 'send':
+                                                    if service not in event_relations[event_key]['publishing_services']:
+                                                        event_relations[event_key]['publishing_services'].append(service)
+                                                elif action == 'receive':
+                                                    if service not in event_relations[event_key]['consuming_services']:
+                                                        event_relations[event_key]['consuming_services'].append(service)
+                except Exception as e:
+                    print(f"Error analyzing service file {service_file}: {e}")
+                    
+        # Print statistics for debugging
+        num_events = len(event_relations)
+        events_with_publishers = sum(1 for relations in event_relations.values() if relations['publishing_services'])
+        events_with_consumers = sum(1 for relations in event_relations.values() if relations['consuming_services'])
+        print(f"Found {num_events} events, {events_with_publishers} with publishers, {events_with_consumers} with consumers")
+            
         self.event_relations = event_relations
         return event_relations
     

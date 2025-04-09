@@ -369,7 +369,7 @@ function initializeGraphZoomPan(containerId, options = {}) {
 let zoomPanInstance = null;
 function initializeZoomPan() {
     if (!zoomPanInstance) {
-        zoomPanInstance = initializeGraphZoomPan('service-graph');
+        zoomPanInstance = initializeGraphZoomPan('flow-graph');
     }
 }
 
@@ -380,7 +380,7 @@ document.addEventListener('DOMContentLoaded', () => {
     
     // Fallback attempt after 1 second if needed
     setTimeout(() => {
-        const container = document.getElementById('service-graph');
+        const container = document.getElementById('flow-graph');
         if (container && container.childElementCount > 1 && !zoomPanInstance) {
             initializeZoomPan();
         }
