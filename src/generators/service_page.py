@@ -24,12 +24,13 @@ class ServicePageGenerator:
         templates_dir = Path(__file__).parent.parent / 'templates'
         self.env = Environment(loader=FileSystemLoader(templates_dir))
         
-    def generate(self, service):
+    def generate(self, service, all_services=None):
         """
         Generate the HTML page for a service.
         
         Args:
             service (Service): Service object to generate the page for.
+            all_services (list): List of all service names for the sidebar.
             
         Returns:
             str: Path to the generated page.
@@ -41,7 +42,8 @@ class ServicePageGenerator:
         # Prepare the context for the template
         context = {
             'service': service.to_dict(),
-            'graph_data_url': f'/static/js/graph-data/{service.id}.json'
+            'graph_data_url': f'/static/js/graph-data/{service.id}.json',
+            'all_services': all_services or []
         }
         
         # Get the template

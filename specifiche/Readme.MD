@@ -29,7 +29,7 @@ Le pagine di documentazione sono di due tipi:
 #### La pagina del **servizio** deve essere come PagServizio.png
 **punti chiave della pagina del servizio:**
 - Barra verticale a sinistra che permette di navigare sul sito
-- barra verticale a sinistra con l'elenco dei link a tutte le pagine del servizio
+- barra verticale a sinistra con l'elenco dei link a tutte le pagine dei servizi sul catalogo
 - titolo grande con nome del servizio
 - campo con breve descrizione in cui ho inserito il link al repo git
 - spazio centrale con grafico di relazioni eventi in entrata -> servizio -> eventi in uscita (utilizzeremo React Flow con dagre per il layout del grafico, come nell'esempio visualizzato su https://event-catalog.photosi.online/)
@@ -76,7 +76,12 @@ L'implementazione deve attenersi rigorosamente a questi principi
 - puoi lavorare in questa folder
 - non implementare funzionalità su casi d'uso ipotetici
 - il catalogo è in sola lettura, ci saranno dei link per navigare tra le pagine ma NESSUN FORM per inserire nuovi messaggi/servizi o modifica di quello che c'è
+- *Non inventare e non cercare di indovinare*: stiamo parlando di un portale di generazione del catalogo partendo dalla documentazione che ricevi in input, tutte le informazioni rappresentate devono essere lette dalla documentazione in input, se non trovi qualcosa dimmelo
 
 Voglio cambiare la generazione della documentazione dei servizi:
 il comportamento di default è di creare la pagina di documentazione di ogni servizio che trovi nella cartella services.
 se ti passo l'arg --service con il nome di un servizio, mi generi solo quella
+
+Creazione dell'indice dei servizi:
+Voglio creare un div contenente l'elenco dei link a tutte le pagine dei servizi che hai generato, questo div deve elencare i link incolonnati. Fai riferimento a "indice-servizi.png"
+Voglio che modifichi il template della pagina del servizio in modo che includa questo div, così come te l'ho mostrato, nello spazio tra la navbar verticale e il grafico

@@ -47,6 +47,9 @@ class SiteGenerator:
         # Parse the service
         service = self.service_parser.parse(service_name)
         
+        # Get the list of all services for the sidebar and sort them alphabetically
+        all_services = sorted(self.service_parser.list_all_services())
+        
         # Collect detailed information about each event
         for event in service.received_events:
             detailed_event = self.event_parser.parse(event.type, event.id)
@@ -92,8 +95,8 @@ class SiteGenerator:
         with open(graph_data_path / f"{service_name}.json", 'w', encoding='utf-8') as f:
             json.dump(graph_data, f, indent=2)
             
-        # Generate the service page
-        return self.service_page_generator.generate(service)
+        # Generate the service page with the list of all services
+        return self.service_page_generator.generate(service, all_services)
         
     def generate_event_page(self, event_type, event_name):
         """
