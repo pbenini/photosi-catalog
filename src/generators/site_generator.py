@@ -90,7 +90,9 @@ class SiteGenerator:
                 if event.id in message_containers_to_titles:
                     event_key = message_containers_to_titles[event.id]
                 
-                if service not in event_relations[event_key]['publishing_services']:
+                # Usa gli ID dei servizi per evitare duplicati
+                service_ids = [s.id for s in event_relations[event_key]['publishing_services']]
+                if service.id not in service_ids:
                     event_relations[event_key]['publishing_services'].append(service)
             
             # Add to consuming services for each received event
@@ -102,7 +104,9 @@ class SiteGenerator:
                 if event.id in message_containers_to_titles:
                     event_key = message_containers_to_titles[event.id]
                 
-                if service not in event_relations[event_key]['consuming_services']:
+                # Usa gli ID dei servizi per evitare duplicati
+                service_ids = [s.id for s in event_relations[event_key]['consuming_services']]
+                if service.id not in service_ids:
                     event_relations[event_key]['consuming_services'].append(service)
         
         # Now try to find additional relations by looking through service files directly
@@ -130,10 +134,14 @@ class SiteGenerator:
                                                 service = self.service_parser.parse(service_name)
                                                 
                                                 if action == 'send':
-                                                    if service not in event_relations[event_key]['publishing_services']:
+                                                    # Usa gli ID dei servizi per evitare duplicati
+                                                    service_ids = [s.id for s in event_relations[event_key]['publishing_services']]
+                                                    if service.id not in service_ids:
                                                         event_relations[event_key]['publishing_services'].append(service)
                                                 elif action == 'receive':
-                                                    if service not in event_relations[event_key]['consuming_services']:
+                                                    # Usa gli ID dei servizi per evitare duplicati
+                                                    service_ids = [s.id for s in event_relations[event_key]['consuming_services']]
+                                                    if service.id not in service_ids:
                                                         event_relations[event_key]['consuming_services'].append(service)
                 except Exception as e:
                     print(f"Error analyzing service file {service_file}: {e}")

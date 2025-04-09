@@ -144,44 +144,108 @@ class EventParser:
             print(f"Warning: Directory not found for event type {event_type}")
             return None
         
-        # Parse the Directory from the event_name
+        # Strategia 1: Controllo diretto sul titolo in tutti i file YAML
+        # Questo è più lento ma più affidabile, controlla tutti i file YAML in tutte le directory
+        # del tipo di evento
+        all_yaml_files = []
+        for directory in type_dir.iterdir():
+            if directory.is_dir():
+                all_yaml_files.extend(directory.glob("*.yaml"))
+        
+        for yaml_file in all_yaml_files:
+            try:
+                with open(yaml_file, 'r', encoding='utf-8') as f:
+                    data = yaml.safe_load(f)
+                    if 'components' in data and 'messages' in data['components']:
+                        for _, msg_data in data['components']['messages'].items():
+                            # Prima prova la corrispondenza esatta
+                            if msg_data.get('title') == event_name:
+                                return yaml_file
+                            
+                            # Poi prova corrispondenza case-insensitive
+                            if msg_data.get('title') and msg_data.get('title').lower() == event_name.lower():
+                                return yaml_file
+                            
+                            # Poi controlla se c'è una corrispondenza dopo la normalizzazione del nome
+                            # (per gestire variazioni come "PriceListDirectory" vs "PricelistDirectory")
+                            if msg_data.get('title'):
+                                normalized_title = msg_data.get('title').replace(' ', '')
+                                normalized_event_name = event_name.replace(' ', '')
+                                if normalized_title.lower() == normalized_event_name.lower():
+                                    return yaml_file
+            except Exception as e:
+                print(f"Error checking file {yaml_file}: {e}")
+        
+        # Strategia 2: Se non trovato con il metodo diretto, prova a cercare un file specifico
+        # basato sulla struttura del nome
         if ':' in event_name:
             directory_name, topic_name = event_name.split(':', 1)
+            
+            # Normalizza i nomi per la ricerca nei file system
+            directory_part = directory_name.lower().replace('directory', '')
+            # Rimuovi spazi e sottoliane e converti in minuscolo per maggiore compatibilità
+            topic_part = topic_name.lower().replace(' ', '').replace('_', '')
+            
+            # Costruisci diverse varianti del possibile nome file
+            file_name_variants = [
+                f"{event_type}.{topic_part}.yaml",
+                f"{event_type}.{topic_part.lower()}.yaml",
+                f"{topic_part}.yaml",
+                f"{topic_part.lower()}.yaml"
+            ]
             
             # Try different variations of the directory name
             possible_directory_names = [
                 directory_name.lower(),  # lowercase
                 directory_name.lower().replace("directory", ""),  # without directory suffix
-                directory_name.lower() + "directory"  # with directory suffix
+                directory_name.lower() + "directory",  # with directory suffix
+                "".join(word.lower() for word in directory_name.split() if word.lower() != "directory")  # no spaces, no directory
             ]
             
             # Find all directories that could match
-            directories = []
             for dir_name in possible_directory_names:
                 directory_path = type_dir / dir_name
                 if directory_path.exists():
-                    directories.append(directory_path)
-                    
-            # If still not found, search all directories
-            if not directories:
-                print(f"Warning: Could not find exact directory for {event_name}, searching all directories")
-                directories = [d for d in type_dir.iterdir() if d.is_dir()]
-        else:
-            # If no Directory part, search all directories
-            print(f"Warning: Event name {event_name} is not in Directory:Topic format, searching all directories")
-            directories = [d for d in type_dir.iterdir() if d.is_dir()]
+                    # Try each file name variant
+                    for file_variant in file_name_variants:
+                        potential_file = directory_path / file_variant
+                        if potential_file.exists():
+                            # Verifica se il file contiene effettivamente l'evento cercato
+                            try:
+                                with open(potential_file, 'r', encoding='utf-8') as f:
+                                    data = yaml.safe_load(f)
+                                    if 'components' in data and 'messages' in data['components']:
+                                        for _, msg_data in data['components']['messages'].items():
+                                            title = msg_data.get('title', '')
+                                            # Confronta in modo case-insensitive
+                                            if title.lower() == event_name.lower():
+                                                return potential_file
+                            except Exception as e:
+                                print(f"Error checking potential file {potential_file}: {e}")
         
-        # Search in the identified directories
-        for directory in directories:
-            for yaml_file in directory.glob("*.yaml"):
-                try:
-                    with open(yaml_file, 'r', encoding='utf-8') as f:
-                        data = yaml.safe_load(f)
-                        if 'components' in data and 'messages' in data['components']:
-                            for _, msg_data in data['components']['messages'].items():
-                                if msg_data.get('title') == event_name:
-                                    return yaml_file
-                except Exception as e:
-                    print(f"Error checking file {yaml_file}: {e}")
+        # Strategia 3: come ultima spiaggia, cerca nei file che potrebbero contenere il nome del topic
+        if ':' in event_name:
+            directory_name, topic_name = event_name.split(':', 1)
+            
+            # Normalizza topic_name per la ricerca
+            topic_search = topic_name.lower()
+            
+            for directory in type_dir.iterdir():
+                if directory.is_dir():
+                    # Cerca file YAML che potrebbero contenere il nome del topic nel nome del file
+                    for yaml_file in directory.glob(f"*{topic_search}*.yaml"):
+                        try:
+                            with open(yaml_file, 'r', encoding='utf-8') as f:
+                                data = yaml.safe_load(f)
+                                if 'components' in data and 'messages' in data['components']:
+                                    # Controlla ogni messaggio nel file
+                                    for _, msg_data in data['components']['messages'].items():
+                                        title = msg_data.get('title', '')
+                                        # Case-insensitive check
+                                        if title.lower() == event_name.lower():
+                                            return yaml_file
+                        except Exception as e:
+                            print(f"Error checking file {yaml_file}: {e}")
         
+        print(f"Warning: Could not find event file for {event_type} {event_name}")
         return None

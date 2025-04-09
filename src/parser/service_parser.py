@@ -64,10 +64,13 @@ class ServiceParser:
             # Extract the event type and name from the channel reference
             event_type, event_name = self._parse_channel_ref(channel_ref)
                         
+            # Recupera il nome esatto dell'evento dal file originale, se possibile
+            correct_name = self._get_exact_event_name(event_type, event_name)
+            
             # Create an Event object
             event = Event(
                 id=event_name,
-                name=event_name,
+                name=correct_name if correct_name else event_name,
                 type=event_type,
                 description=''  # We'll need to parse the event file to get the description
             )
@@ -136,7 +139,9 @@ class ServiceParser:
                 if '.yaml' in part and '.' in part:
                     file_parts = part.split('.')
                     if len(file_parts) >= 3:  # like message.createupdate.yaml
-                        topic_name = file_parts[1].capitalize()  # Capitalize topic
+                        # Preserva il formato PascalCase nel topic assicurandosi solo che inizi con la maiuscola
+                        topic = file_parts[1]
+                        topic_name = topic[0].upper() + topic[1:] if topic else topic
                         break
             
             # If we have both directory and topic, create the "Directory:Topic" format
@@ -171,7 +176,9 @@ class ServiceParser:
                             lower_dir = directory_part.lower()
                             lower_raw = raw_name.lower()
                             start_idx = lower_raw.find(lower_dir) + len(lower_dir)
-                            topic_part = raw_name[start_idx:].capitalize()
+                            topic = raw_name[start_idx:]
+                            # Preserva il formato PascalCase nel topic assicurandosi solo che inizi con la maiuscola
+                            topic_part = topic[0].upper() + topic[1:] if topic else topic
                             
                             if topic_part:
                                 # Build the event name in Directory:Topic format
