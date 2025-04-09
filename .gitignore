@@ -2,3 +2,4 @@ asyncapi-files
 dest
 venv
 output
+*/__pycache__
