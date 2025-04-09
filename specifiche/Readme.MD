@@ -84,4 +84,10 @@ se ti passo l'arg --service con il nome di un servizio, mi generi solo quella
 
 Creazione dell'indice dei servizi:
 Voglio creare un div contenente l'elenco dei link a tutte le pagine dei servizi che hai generato, questo div deve elencare i link incolonnati. Fai riferimento a "indice-servizi.png"
-Voglio che modifichi il template della pagina del servizio in modo che includa questo div, così come te l'ho mostrato, nello spazio tra la navbar verticale e il grafico
+Voglio che modifichi il template della pagina del servizio in modo che includa questo div, così come te l'ho mostrato, voglio che sia dentro l'elemento "sidebar-nav" sotto "Events"
+
+Modifica visualizzazione eventi:
+Nel template della pagina del servizio voglio che modifichi l'elemento "event-sidebar".
+Va diviso in 2 elementi: received-event-sidebar e sent-event-sidebar.
+sent-event-sidebar lo posizioni a destra di service-graph
+received-event-sidebar lo posizioni a sinistra di service-graph

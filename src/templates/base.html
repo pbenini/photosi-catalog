@@ -25,6 +25,25 @@
                     <li><a href="/index.html">Home</a></li>
                     <li><a href="/services/index.html">Services</a></li>
                     <li><a href="/events/index.html">Events</a></li>
+                    
+                    {% if all_services %}
+                    <li class="services-dropdown">
+                        <div class="services-dropdown-header">
+                            <span>Services ({{ all_services|length }})</span>
+                            <span>▾</span>
+                        </div>
+                        <ul class="services-dropdown-content">
+                            {% for service_name in all_services %}
+                            <li>
+                                <a href="/services/{{ service_name }}.html" {% if service_name == service.id %}class="active"{% endif %}>
+                                    <span class="service-icon">⬚</span>
+                                    {{ service_name }}
+                                </a>
+                            </li>
+                            {% endfor %}
+                        </ul>
+                    </li>
+                    {% endif %}
                 </ul>
             </nav>
         </aside>

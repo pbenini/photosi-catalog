@@ -196,54 +196,37 @@
     </div>
     
 <div class="events-container">
-        <!-- Service List Sidebar -->
-        <div class="service-list-container">
-            <div class="service-list-header">
-                <h3>Services</h3>
-                <span class="services-indicator">{{ all_services|length }}</span>
-            </div>
-            <ul class="service-list-nav">
-                {% for service_name in all_services %}
-                <li>
-                    <a href="/services/{{ service_name }}.html" {% if service_name == service.id %}class="active"{% endif %}>
-                        <span class="service-icon">⬚</span>
-                        {{ service_name }}
+        <!-- Received Events Sidebar -->
+        <div class="event-sidebar received-event-sidebar">
+            <h2>Received Events</h2>
+            <ul class="event-list">
+                {% for event in service.received_events %}
+                <li class="event-list-item">
+                    <a href="/events/{{ event.type }}_{{ event.id }}.html">
+                        <strong>{{ event.name }}</strong>
+                        <span class="event-type">({{ event.type }})</span>
                     </a>
                 </li>
                 {% endfor %}
             </ul>
         </div>
         
+        <!-- Service Graph -->
         <div class="service-graph" id="service-graph"></div>
         
-        <div class="event-sidebar">
-            <div class="events-sent">
-                <h2>Sent Events</h2>
-                <ul class="event-list">
-                    {% for event in service.sent_events %}
-                    <li class="event-list-item">
-                        <a href="/events/{{ event.type }}_{{ event.id }}.html">
-                            <strong>{{ event.name }}</strong>
-                            <span class="event-type">({{ event.type }})</span>
-                        </a>
-                    </li>
-                    {% endfor %}
-                </ul>
-            </div>
-            
-            <div class="events-received">
-                <h2>Received Events</h2>
-                <ul class="event-list">
-                    {% for event in service.received_events %}
-                    <li class="event-list-item">
-                        <a href="/events/{{ event.type }}_{{ event.id }}.html">
-                            <strong>{{ event.name }}</strong>
-                            <span class="event-type">({{ event.type }})</span>
-                        </a>
-                    </li>
-                    {% endfor %}
-                </ul>
-            </div>
+        <!-- Sent Events Sidebar -->
+        <div class="event-sidebar sent-event-sidebar">
+            <h2>Sent Events</h2>
+            <ul class="event-list">
+                {% for event in service.sent_events %}
+                <li class="event-list-item">
+                    <a href="/events/{{ event.type }}_{{ event.id }}.html">
+                        <strong>{{ event.name }}</strong>
+                        <span class="event-type">({{ event.type }})</span>
+                    </a>
+                </li>
+                {% endfor %}
+            </ul>
         </div>
     </div>
 </div>

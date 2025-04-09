@@ -95,67 +95,98 @@ body {
     margin-bottom: 30px;
 }
 
-/* Service List Styles */
-.service-list-container {
-    width: 260px;
-    max-height: 600px;
-    overflow-y: auto;
-    background-color: #ffffff;
-    border: 1px solid #ddd;
-    border-radius: 5px;
+/* Services dropdown in sidebar */
+.services-dropdown {
+    margin-top: 20px;
 }
 
-.service-list-header {
-    padding: 10px 15px;
-    border-bottom: 1px solid #eee;
+.services-dropdown-header {
+    padding: 10px;
+    font-weight: bold;
+    cursor: pointer;
     display: flex;
     align-items: center;
     justify-content: space-between;
-    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
 }
 
-.services-indicator {
-    background-color: #f1f1f1;
-    border-radius: 12px;
-    padding: 2px 8px;
-    font-size: 12px;
-}
-
-.service-list-nav {
+.services-dropdown-content {
     list-style: none;
-    padding: 10px 0;
+    padding-left: 10px;
+    max-height: 300px;
+    overflow-y: auto;
 }
 
-.service-list-nav li a {
-    padding: 8px 15px;
+.services-dropdown-content li {
+    margin-bottom: 5px;
+}
+
+.services-dropdown-content a {
     display: flex;
     align-items: center;
-    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+    padding: 6px 10px;
+    border-radius: 4px;
+    text-decoration: none;
+    color: #333;
     transition: background-color 0.2s;
+    font-size: 14px;
 }
 
-.service-list-nav li a:hover {
-    background-color: #f5f7fa;
+.services-dropdown-content a:hover {
+    background-color: #f5f5f5;
 }
 
-.service-list-nav li a.active {
+.services-dropdown-content a.active {
     background-color: #e6f7ff;
     color: #1890ff;
-    border-right: 3px solid #1890ff;
+    font-weight: bold;
 }
 
 .service-icon {
-    margin-right: 10px;
-    font-size: 16px;
+    margin-right: 8px;
     opacity: 0.7;
 }
 
+/* Service graph layout */
 .service-graph {
     flex: 3;
     height: 600px;
     border: 1px solid #ddd;
     border-radius: 5px;
-    margin-left: 20px;
+    margin: 0 20px;
+}
+
+/* Event sidebar styles */
+.event-sidebar {
+    flex: 1;
+    background-color: #f9f9f9;
+    padding: 0;
+    border-radius: 5px;
+    border: 1px solid #ddd;
+    min-width: 250px;
+    max-width: 300px;
+    max-height: 600px;
+    display: flex;
+    flex-direction: column;
+    overflow: hidden;
+}
+
+.received-event-sidebar h2,
+.sent-event-sidebar h2 {
+    font-size: 20px;
+    margin: 0;
+    padding: 20px;
+    border-bottom: 1px solid #ddd;
+    background-color: #f9f9f9;
+    position: sticky;
+    top: 0;
+    z-index: 10;
+}
+
+.event-list {
+    list-style: none;
+    padding: 0 20px 20px 20px;
+    overflow-y: auto;
+    max-height: 530px; /* Allowing space for the header */
 }
 
 .event-sidebar {
@@ -298,6 +329,32 @@ body {
 }
 
 /* Responsive styles */
+@media (max-width: 1200px) {
+    .events-container {
+        flex-wrap: wrap;
+    }
+    
+    .service-graph {
+        order: 1;
+        flex-basis: 100%;
+        margin: 20px 0;
+    }
+    
+    .received-event-sidebar {
+        order: 2;
+        flex-basis: 48%;
+        margin-right: 2%;
+        max-width: 48%;
+    }
+    
+    .sent-event-sidebar {
+        order: 3;
+        flex-basis: 48%;
+        margin-left: 2%;
+        max-width: 48%;
+    }
+}
+
 @media (max-width: 768px) {
     .container {
         flex-direction: column;
@@ -320,11 +377,30 @@ body {
     
     .service-graph {
         height: 400px;
-        margin-right: 0;
-        margin-bottom: 20px;
+        margin: 20px 0;
+        order: 1;
     }
     
-    .event-sidebar {
+    .received-event-sidebar, 
+    .sent-event-sidebar {
         max-width: 100%;
+        margin: 10px 0;
+        max-height: 400px;
+    }
+    
+    .event-list {
+        max-height: 330px; /* Adjusted for mobile view */
+    }
+    
+    .received-event-sidebar {
+        order: 2;
+    }
+    
+    .sent-event-sidebar {
+        order: 3;
+    }
+    
+    .services-dropdown-content {
+        max-height: 200px;
     }
 }
