@@ -173,14 +173,16 @@ class SiteGenerator:
         
         # Collect detailed information about each event
         for event in service.received_events:
-            detailed_event = self.event_parser.parse(event.type, event.id)
+            detailed_event = self.event_parser.parse(event.id)
             event.name = detailed_event.name  # This should contain the title from YAML
             event.description = detailed_event.description
+            event.type = detailed_event.type
             
         for event in service.sent_events:
-            detailed_event = self.event_parser.parse(event.type, event.id)
+            detailed_event = self.event_parser.parse(event.id)
             event.name = detailed_event.name  # This should contain the title from YAML
             event.description = detailed_event.description
+            event.type = detailed_event.type
             
         # Generate the graph data
         graph_data = service.to_graph_data()
@@ -285,6 +287,7 @@ class SiteGenerator:
         
         return all_events
     
+    # TODO: unused?
     def generate_all(self):
         """
         Generate documentation for all services and events.

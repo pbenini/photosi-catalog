@@ -4,7 +4,6 @@ Generates HTML pages for service documentation.
 """
 
 import os
-import json
 import re
 from pathlib import Path
 from jinja2 import Environment, FileSystemLoader

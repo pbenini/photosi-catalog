@@ -3,12 +3,13 @@ Service parser module for the photosi-catalog-site-builder.
 Parses service YAML files into Service model objects.
 """
 
-import os
 import yaml
 from pathlib import Path
 
 from models.service import Service
 from models.event import Event
+
+from parser.channel_parser import ChannelParser
 
 class ServiceParser:
     """Parser for service files from the AsyncAPI specification."""
@@ -22,6 +23,7 @@ class ServiceParser:
         """
         self.base_directory = Path(base_directory)
         self.services_directory = self.base_directory / "services"
+        self.cahnnel_parser = ChannelParser(base_directory)
         
     def parse(self, service_name):
         """
@@ -61,16 +63,13 @@ class ServiceParser:
             channel_ref = op_data.get('channel', {}).get('$ref', '')
             
             # Extract the event type and name from the channel reference
-            event_type, event_name = self._parse_channel_ref(channel_ref)
+            channel = self.cahnnel_parser.parse(channel_ref)
                         
-            # Recupera il nome esatto dell'evento dal file originale, se possibile
-            correct_name = self._get_exact_event_name(event_type, event_name)
-            
             # Create an Event object
             event = Event(
-                id=event_name,
-                name=correct_name if correct_name else event_name,
-                type=event_type,
+                id=channel.event_ref,
+                name='',
+                type='',
                 description=''  # We'll need to parse the event file to get the description
             )
             
@@ -81,116 +80,6 @@ class ServiceParser:
                 service.add_sent_event(event)
                 
         return service
-            
-    def _parse_channel_ref(self, channel_ref):
-        """
-        Parse a channel reference to extract the event type and name.
-        
-        Args:
-            channel_ref (str): Channel reference string from the AsyncAPI file.
-            
-        Returns:
-            tuple: A tuple containing (event_type, event_name).
-        """
-        if not channel_ref:
-            return 'unknown', 'unknown'
-        
-        # Example ref: ../channels/crmdirectory/message.createupdatephotosiuser.yaml#/channels/messagecrmdirectorycreateupdatephotosiuser
-        
-        try:
-            # Determine the event type from the reference path
-            event_type = 'unknown'
-            if 'message.' in channel_ref or '/message/' in channel_ref:
-                event_type = 'message'
-            elif 'request.' in channel_ref or '/request/' in channel_ref:
-                event_type = 'request'
-            elif 'command.' in channel_ref or '/command/' in channel_ref or 'schedule.' in channel_ref:
-                event_type = 'command'
-                
-            # Try to extract directory name from the path
-            parts = channel_ref.split('/')
-            directory_name = None
-            for i, part in enumerate(parts):
-                # Look for a directory that might contain 'directory' in its name
-                if 'directory' in part.lower() and i < len(parts) - 1:
-                    directory_name = part
-                    
-            # If we couldn't find a directory name, use a fallback
-            if not directory_name:
-                if len(parts) >= 3:
-                    directory_name = parts[-2]
-                    
-            # Format the directory name with proper casing - capitalize each word
-            if directory_name:
-                # Handle special case where directory is all lowercase
-                if directory_name.islower() and 'directory' in directory_name:
-                    # Split camelCase if needed
-                    directory_name = ''.join(word.capitalize() for word in directory_name.split('_'))
-                    # Make sure "Directory" is properly capitalized at the end
-                    if directory_name.lower().endswith('directory'):
-                        directory_name = directory_name[:-9] + "Directory"
-            
-            # Try to find the topic part (what comes after the Directory name)
-            topic_name = None
-            
-            # First check if there's a .yaml file name with message.something.yaml pattern
-            for part in parts:
-                if '.yaml' in part and '.' in part:
-                    file_parts = part.split('.')
-                    if len(file_parts) >= 3:  # like message.createupdate.yaml
-                        # Preserva il formato PascalCase nel topic assicurandosi solo che inizi con la maiuscola
-                        topic = file_parts[1]
-                        topic_name = topic[0].upper() + topic[1:] if topic else topic
-                        break
-            
-            # If we have both directory and topic, create the "Directory:Topic" format
-            if directory_name and topic_name:
-                # Make sure directory ends with "Directory"
-                if not directory_name.lower().endswith('directory'):
-                    directory_name = directory_name + "Directory"
-                    
-                # Build the event name in Directory:Topic format
-                event_name = f"{directory_name}:{topic_name}"
-                return event_type, event_name
-            
-            # Fallback: try to extract from the channel part after #
-            if '#' in channel_ref:
-                channel_part = channel_ref.split('#')[1]
-                if '/' in channel_part:
-                    raw_name = channel_part.split('/')[-1]
-                    
-                    # Try to identify the directory and topic parts
-                    if directory_name:
-                        # Remove the type prefix (message, request, command)
-                        if raw_name.startswith(event_type):
-                            raw_name = raw_name[len(event_type):]
-                        
-                        # Find the part that could be the directory
-                        directory_part = None
-                        if directory_name.lower() in raw_name.lower():
-                            directory_part = directory_name
-                        
-                        if directory_part:
-                            # Extract the topic part (everything after the directory)
-                            lower_dir = directory_part.lower()
-                            lower_raw = raw_name.lower()
-                            start_idx = lower_raw.find(lower_dir) + len(lower_dir)
-                            topic = raw_name[start_idx:]
-                            # Preserva il formato PascalCase nel topic assicurandosi solo che inizi con la maiuscola
-                            topic_part = topic[0].upper() + topic[1:] if topic else topic
-                            
-                            if topic_part:
-                                # Build the event name in Directory:Topic format
-                                return event_type, f"{directory_name}:{topic_part}"
-            
-            # Last fallback: just return what we have
-            print(f"Warning: Could not fully parse channel reference: {channel_ref}")
-            return event_type, channel_ref.split('/')[-1].split('.')[0]
-                
-        except Exception as e:
-            print(f"Error parsing channel reference '{channel_ref}': {e}")
-        
-        return 'unknown', 'unknown'
         
     def list_all_services(self):
         """

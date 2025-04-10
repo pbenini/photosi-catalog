@@ -6,18 +6,18 @@ Defines the Channel class representing a channel in the AsyncAPI specification.
 class Channel:
     """Represents a channel in the AsyncAPI specification."""
     
-    def __init__(self, id, address, description=""):
+    def __init__(self, id, address, event_ref):
         """
         Initialize a channel.
         
         Args:
             id (str): Unique identifier for the channel.
             address (str): Address or topic of the channel.
-            description (str, optional): Detailed description of the channel.
+            event_ref (str): async api $ref for event
         """
         self.id = id
         self.address = address
-        self.description = description
+        self.event_ref = event_ref
         
     def to_dict(self):
         """
@@ -29,5 +29,5 @@ class Channel:
         return {
             'id': self.id,
             'address': self.address,
-            'description': self.description
+            'event_ref': self.event_ref,
         }
