@@ -88,7 +88,6 @@ class EventPageGenerator:
         # Replace any : or . in the event.name with _ for safety in the filename
         # Make sure we use the same safe name format throughout the application
         safe_name = event.name.replace(":", "_").replace(".", "_")
-        print(f"Generating page for event: {event.name} (safe name: {safe_name})")
         output_file = events_dir / f"{event.type}_{safe_name}.html"
         with open(output_file, 'w', encoding='utf-8') as f:
             f.write(output)

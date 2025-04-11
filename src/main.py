@@ -97,88 +97,18 @@ def main():
         generator = SiteGenerator(args.input, args.output)
         
         # Handle specific service or event requests
-        if args.service and args.event:
-            # Both service and event specified
-            try:
-                generator.generate_service_page(args.service)
-                print(f"Service page for {args.service} generated successfully")
-                
-                # Handle event parameter
-                event_param = args.event
-                if ':' in event_param:
-                    # If the event parameter is in format "message:Directory:Topic"
-                    if event_param.count(':') == 2:
-                        event_type, directory, topic = event_param.split(':', 2)
-                        event_name = f"{directory}:{topic}"
-                    # If it's in format "Directory:Topic" (assume message type)
-                    else:
-                        event_type = 'message'  # Default to message type
-                        event_name = event_param
-                    
-                    print(f"Parsing event: type={event_type}, name={event_name}")
-                else:
-                    print(f"Error: Invalid event format. Use 'type:name' or 'Directory:Topic' format.", file=sys.stderr)
-                    return 1
-                generator.generate_event_page(event_type, event_name)
-                print(f"Event page for {event_type}:{event_name} generated successfully")
-            except ValueError:
-                print(f"Error: Invalid event format. Use 'type:name' (e.g., 'message:userCreated')", file=sys.stderr)
-                return 1
-        # If only a specific event is requested
-        elif args.event:
-            try:
-                # Handle event parameter
-                event_param = args.event
-                if ':' in event_param:
-                    # If the event parameter is in format "message:Directory:Topic"
-                    if event_param.count(':') == 2:
-                        event_type, directory, topic = event_param.split(':', 2)
-                        event_name = f"{directory}:{topic}"
-                    # If it's in format "Directory:Topic" (assume message type)
-                    else:
-                        event_type = 'message'  # Default to message type
-                        event_name = event_param
-                    
-                    print(f"Parsing event: type={event_type}, name={event_name}")
-                else:
-                    print(f"Error: Invalid event format. Use 'type:name' or 'Directory:Topic' format.", file=sys.stderr)
-                    return 1
-                generator.generate_event_page(event_type, event_name)
-                print(f"Event page for {event_type}:{event_name} generated successfully")
-            except ValueError:
-                print(f"Error: Invalid event format. Use 'type:name' (e.g., 'message:userCreated')", file=sys.stderr)
-                return 1
-        # If only a specific service is requested
-        elif args.service:
+        if args.service:
             generator.generate_service_page(args.service)
-            print(f"Service page for {args.service} generated successfully")
-        else:
-            # Generate pages for all services and events
-            # First generate services
-            services_dir = Path(args.input) / "services"
-            if services_dir.exists():
-                for service_file in services_dir.glob("*.yaml"):
-                    service_name = service_file.stem
-                    generator.generate_service_page(service_name)
-            else:
-                print(f"Warning: Services directory not found at {services_dir}", file=sys.stderr)
-                
-            # Then generate events
-            all_events = generator.collect_all_events()
-            print(f"Generating pages for {len(all_events)} events...")
-            for event_type, event_name in all_events:
-                # Validate event type
-                if event_type not in ['message', 'request', 'command']:
-                    print(f"Skipping unsupported event type: {event_type} for {event_name}")
-                    continue
-                    
-                try:
-                    event_page = generator.generate_event_page(event_type, event_name)
-                    print(f"Generated event page: {event_page}")
-                except Exception as e:
-                    print(f"Error generating page for event {event_type}:{event_name}: {e}")
+            print(f"Service page for {args.service} generated successfully in {args.output}")
+        
+        if args.event:
+            generator.generate_event_page(args.event)
+            print(f"Event page for {args.event} generated successfully in {args.output}")
             
-        print(f"Site generated successfully in {args.output}")
+        if not args.service and not args.event:
+            generator.generate_all()
+            print(f"Site generated successfully in {args.output}")
+            
         return 0
     except Exception as e:
         print(f"Error: {e}", file=sys.stderr)

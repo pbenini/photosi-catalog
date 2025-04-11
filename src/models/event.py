@@ -52,7 +52,7 @@ class Event:
         
         # Add the event node in the center
         event_node = {
-            'id': f"{self.id}-{self.type}-{self.version}",
+            'id': f"{self.id}-{self.type}",
             'type': f"{self.type}s",  # pluralize the type
             'data': {
                 'mode': 'full',
@@ -61,7 +61,6 @@ class Event:
                     'data': {
                         'id': self.id,
                         'name': self.name,
-                        'version': self.version
                     }
                 }
             },
@@ -74,7 +73,7 @@ class Event:
         if publishing_services:
             for service in publishing_services:
                 service_node = {
-                    'id': f"{service.id}-{service.version}",
+                    'id': f"{service.id}",
                     'type': 'services',
                     'data': {
                         'service': {
@@ -82,7 +81,6 @@ class Event:
                             'data': {
                                 'id': service.id,
                                 'name': service.title,
-                                'version': service.version
                             }
                         }
                     },
@@ -92,9 +90,9 @@ class Event:
                 
                 # Add edge from service to event
                 edge = {
-                    'id': f"{service.id}-{service.version}-{self.id}-{self.type}-{self.version}",
-                    'source': f"{service.id}-{service.version}",
-                    'target': f"{self.id}-{self.type}-{self.version}",
+                    'id': f"{service.id}-{self.id}-{self.type}",
+                    'source': f"{service.id}",
+                    'target': f"{self.id}-{self.type}",
                     'label': 'publishes',
                     'animated': False,
                     'data': {
@@ -103,7 +101,6 @@ class Event:
                             'data': {
                                 'id': self.id,
                                 'name': self.name,
-                                'version': self.version
                             }
                         }
                     }
@@ -117,7 +114,7 @@ class Event:
         if consuming_services:
             for service in consuming_services:
                 service_node = {
-                    'id': f"{service.id}-{service.version}",
+                    'id': f"{service.id}",
                     'type': 'services',
                     'data': {
                         'service': {
@@ -125,7 +122,6 @@ class Event:
                             'data': {
                                 'id': service.id,
                                 'name': service.title,
-                                'version': service.version
                             }
                         }
                     },
@@ -138,9 +134,9 @@ class Event:
                 
                 # Add edge from event to service
                 edge = {
-                    'id': f"{self.id}-{self.type}-{self.version}-{service.id}-{service.version}",
-                    'source': f"{self.id}-{self.type}-{self.version}",
-                    'target': f"{service.id}-{service.version}",
+                    'id': f"{self.id}-{self.type}-{service.id}",
+                    'source': f"{self.id}-{self.type}",
+                    'target': f"{service.id}",
                     'label': 'consumed by',
                     'animated': False,
                     'data': {
@@ -149,7 +145,6 @@ class Event:
                             'data': {
                                 'id': self.id,
                                 'name': self.name,
-                                'version': self.version
                             }
                         }
                     }

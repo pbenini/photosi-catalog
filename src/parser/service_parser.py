@@ -10,6 +10,7 @@ from models.service import Service
 from models.event import Event
 
 from parser.channel_parser import ChannelParser
+from parser.event_parser import EventParser
 
 class ServiceParser:
     """Parser for service files from the AsyncAPI specification."""
@@ -24,6 +25,7 @@ class ServiceParser:
         self.base_directory = Path(base_directory)
         self.services_directory = self.base_directory / "services"
         self.cahnnel_parser = ChannelParser(base_directory)
+        self.event_parser = EventParser(base_directory)
         
     def parse(self, service_name):
         """
@@ -66,12 +68,7 @@ class ServiceParser:
             channel = self.cahnnel_parser.parse(channel_ref)
                         
             # Create an Event object
-            event = Event(
-                id=channel.event_ref,
-                name='',
-                type='',
-                description=''  # We'll need to parse the event file to get the description
-            )
+            event = self.event_parser.parse(channel.event_ref)
             
             # Add the event to the service
             if action == 'receive':
