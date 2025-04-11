@@ -212,14 +212,6 @@
         <h1>Find, filter and search for any events in your system.</h1>
         
         <div class="filter-buttons">
-            <button class="filter-button" data-type="all">
-                <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                    <path d="M11 3H5a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-6"></path>
-                    <path d="M18 2l4 4-10 10H8v-4L18 2z"></path>
-                </svg>
-                All 
-                <span class="count">({{ total_events }})</span>
-            </button>
             
             <button class="filter-button" data-type="message">
                 <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#f98131" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
@@ -388,6 +380,11 @@ document.addEventListener('DOMContentLoaded', function() {
     const searchConsumers = document.getElementById('search-consumers');
     const eventRows = document.querySelectorAll('.event-row');
     
+    // Header columns and all producer cells
+    const producersHeader = document.querySelector('.events-table th:nth-child(2)');
+    const producersSearchHeader = document.querySelector('.search-header th:nth-child(2)');
+    const producersCells = document.querySelectorAll('.events-table td:nth-child(2)');
+    
     // Pagination elements
     const firstPageBtn = document.getElementById('first-page');
     const prevPageBtn = document.getElementById('prev-page');
@@ -402,10 +399,16 @@ document.addEventListener('DOMContentLoaded', function() {
     let currentPage = 1;
     let pageSize = parseInt(pageSizeSelect.value);
     let filteredRows = [...eventRows];
-    let activeFilter = 'all';
+    let activeFilter = 'message'; // Default to message filter instead of 'all'
     
     // Initialize
     updatePagination();
+    
+    // Set message filter as default active
+    const messageFilterBtn = document.querySelector('.filter-button[data-type="message"]');
+    if (messageFilterBtn) {
+        messageFilterBtn.classList.add('active');
+    }
     
     // Filter by event type
     filterButtons.forEach(button => {
@@ -482,7 +485,7 @@ document.addEventListener('DOMContentLoaded', function() {
         
         filteredRows = [...eventRows].filter(row => {
             // Filter by event type
-            if (activeFilter !== 'all' && row.getAttribute('data-type') !== activeFilter) {
+            if (row.getAttribute('data-type') !== activeFilter) {
                 return false;
             }
             
@@ -511,6 +514,26 @@ document.addEventListener('DOMContentLoaded', function() {
         updatePagination();
     }
     
+    // Function to update column visibility
+    function updateColumnsVisibility() {
+        // Hide producers column if command filter is active
+        const hideProducers = activeFilter === 'command';
+        
+        if (hideProducers) {
+            producersHeader.style.display = 'none';
+            producersSearchHeader.style.display = 'none';
+            producersCells.forEach(cell => {
+                cell.style.display = 'none';
+            });
+        } else {
+            producersHeader.style.display = '';
+            producersSearchHeader.style.display = '';
+            producersCells.forEach(cell => {
+                cell.style.display = '';
+            });
+        }
+    }
+    
     // Update pagination display and visible rows
     function updatePagination() {
         const totalPages = Math.ceil(filteredRows.length / pageSize);
@@ -518,6 +541,9 @@ document.addEventListener('DOMContentLoaded', function() {
         currentPageSpan.textContent = currentPage;
         goToPageInput.value = currentPage;
         goToPageInput.max = totalPages;
+        
+        // Update columns visibility based on active filter
+        updateColumnsVisibility();
         
         // Enable/disable navigation buttons
         firstPageBtn.disabled = currentPage === 1;
