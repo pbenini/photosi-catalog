@@ -1,0 +1,544 @@
+{% extends "base.html" %}
+
+{% block title %}Events Table - Photosì Event Documentation{% endblock %}
+
+{% block head %}
+<style>
+    .events-header {
+        margin-bottom: 30px;
+    }
+    
+    .events-header h1 {
+        margin-bottom: 10px;
+    }
+    
+    .filter-buttons {
+        display: flex;
+        gap: 15px;
+        margin-bottom: 20px;
+    }
+    
+    .filter-button {
+        display: flex;
+        align-items: center;
+        gap: 8px;
+        padding: 8px 15px;
+        border-radius: 4px;
+        background-color: #f5f5f5;
+        border: 1px solid #ddd;
+        cursor: pointer;
+        font-size: 16px;
+        font-weight: 500;
+    }
+    
+    .filter-button.active {
+        background-color: #e0e0e0;
+        border-color: #aaa;
+    }
+    
+    .filter-button .count {
+        font-size: 14px;
+        color: #666;
+    }
+    
+    .event-icon {
+        width: 24px;
+        height: 24px;
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        border-radius: 4px;
+        color: white;
+    }
+    
+    .event-icon.message {
+        background-color: #f98131;
+    }
+    
+    .event-icon.request {
+        background-color: #3cb44b;
+    }
+    
+    .event-icon.command {
+        background-color: #4169e1;
+    }
+    
+    .service-icon {
+        width: 24px;
+        height: 24px;
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        background-color: #de4c8a;
+        border-radius: 4px;
+        color: white;
+    }
+    
+    .events-table-container {
+        width: 100%;
+        overflow-x: auto;
+        border: 1px solid #ddd;
+        border-radius: 5px;
+    }
+    
+    .events-table {
+        width: 100%;
+        border-collapse: collapse;
+    }
+    
+    .events-table th {
+        background-color: #f5f5f5;
+        padding: 12px 15px;
+        text-align: left;
+        border-bottom: 2px solid #ddd;
+        position: sticky;
+        top: 0;
+        z-index: 10;
+    }
+    
+    .events-table td {
+        padding: 10px 15px;
+        border-bottom: 1px solid #eee;
+        vertical-align: top;
+    }
+    
+    .events-table tr:hover {
+        background-color: #f9f9f9;
+    }
+    
+    .events-table .search-header {
+        padding: 8px 15px;
+        background-color: #f5f5f5;
+        border-bottom: 1px solid #ddd;
+    }
+    
+    .search-input {
+        width: 100%;
+        padding: 8px 12px;
+        border: 1px solid #ddd;
+        border-radius: 4px;
+        font-size: 14px;
+    }
+    
+    .service-list {
+        list-style: none;
+        padding: 0;
+        margin: 0;
+        display: flex;
+        flex-wrap: wrap;
+        gap: 8px;
+    }
+    
+    .service-item {
+        background-color: #f5f5f5;
+        border: 1px solid #ddd;
+        border-radius: 4px;
+        padding: 4px 8px;
+        display: flex;
+        align-items: center;
+        gap: 5px;
+        font-size: 14px;
+    }
+    
+    .no-producers,
+    .no-consumers {
+        font-style: italic;
+        color: #888;
+    }
+    
+    .pagination {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        margin-top: 20px;
+    }
+    
+    .pagination-controls {
+        display: flex;
+        gap: 5px;
+    }
+    
+    .pagination-button {
+        padding: 5px 10px;
+        border: 1px solid #ddd;
+        background-color: #f5f5f5;
+        border-radius: 4px;
+        cursor: pointer;
+    }
+    
+    .pagination-button:hover {
+        background-color: #e0e0e0;
+    }
+    
+    .pagination-button.disabled {
+        color: #aaa;
+        cursor: not-allowed;
+    }
+    
+    .pagination-info {
+        font-size: 14px;
+    }
+    
+    .go-to-page {
+        display: flex;
+        align-items: center;
+        gap: 5px;
+    }
+    
+    .go-to-page input {
+        width: 60px;
+        padding: 5px;
+        border: 1px solid #ddd;
+        border-radius: 4px;
+    }
+    
+    .page-size-selector {
+        display: flex;
+        align-items: center;
+        gap: 5px;
+    }
+    
+    .page-size-selector select {
+        padding: 5px;
+        border: 1px solid #ddd;
+        border-radius: 4px;
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="events-page">
+    <div class="events-header">
+        <h1>Find, filter and search for any events in your system.</h1>
+        
+        <div class="filter-buttons">
+            <button class="filter-button" data-type="all">
+                <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                    <path d="M11 3H5a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-6"></path>
+                    <path d="M18 2l4 4-10 10H8v-4L18 2z"></path>
+                </svg>
+                All 
+                <span class="count">({{ total_events }})</span>
+            </button>
+            
+            <button class="filter-button" data-type="message">
+                <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#f98131" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                    <path d="M13 2L3 14h9l-1 8 10-12h-9l1-8z"></path>
+                </svg>
+                Messages 
+                <span class="count">({{ message_count }})</span>
+            </button>
+            
+            <button class="filter-button" data-type="command">
+                <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#4169e1" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                    <rect x="3" y="3" width="18" height="18" rx="2" ry="2"></rect>
+                    <line x1="8" y1="12" x2="16" y2="12"></line>
+                    <line x1="12" y1="8" x2="12" y2="16"></line>
+                </svg>
+                Commands 
+                <span class="count">({{ command_count }})</span>
+            </button>
+            
+            <button class="filter-button" data-type="request">
+                <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#3cb44b" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                    <circle cx="12" cy="12" r="10"></circle>
+                    <path d="M9.09 9a3 3 0 0 1 5.83 1c0 2-3 3-3 3"></path>
+                    <line x1="12" y1="17" x2="12.01" y2="17"></line>
+                </svg>
+                Requests 
+                <span class="count">({{ request_count }})</span>
+            </button>
+        </div>
+    </div>
+    
+    <div class="events-table-container">
+        <table class="events-table">
+            <thead>
+                <tr>
+                    <th>Message</th>
+                    <th>Producers</th>
+                    <th>Consumers</th>
+                </tr>
+                <tr class="search-header">
+                    <th>
+                        <input type="text" class="search-input" id="search-message" placeholder="Search...">
+                    </th>
+                    <th>
+                        <input type="text" class="search-input" id="search-producers" placeholder="Search...">
+                    </th>
+                    <th>
+                        <input type="text" class="search-input" id="search-consumers" placeholder="Search...">
+                    </th>
+                </tr>
+            </thead>
+            <tbody id="events-table-body">
+                {% for event in events %}
+                <tr class="event-row" data-type="{{ event.type }}">
+                    <td>
+                        <a href="/events/{{ event.type }}_{{ event.id }}.html" class="event-link">
+                            <div class="event-cell">
+                                <div class="event-icon {{ event.type }}">
+                                    {% if event.type == 'message' %}
+                                    <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                                        <path d="M13 2L3 14h9l-1 8 10-12h-9l1-8z"></path>
+                                    </svg>
+                                    {% elif event.type == 'request' %}
+                                    <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                                        <circle cx="12" cy="12" r="10"></circle>
+                                        <path d="M9.09 9a3 3 0 0 1 5.83 1c0 2-3 3-3 3"></path>
+                                        <line x1="12" y1="17" x2="12.01" y2="17"></line>
+                                    </svg>
+                                    {% elif event.type == 'command' %}
+                                    <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                                        <rect x="3" y="3" width="18" height="18" rx="2" ry="2"></rect>
+                                        <line x1="8" y1="12" x2="16" y2="12"></line>
+                                        <line x1="12" y1="8" x2="12" y2="16"></line>
+                                    </svg>
+                                    {% endif %}
+                                </div>
+                                {{ event.name }}
+                            </div>
+                        </a>
+                    </td>
+                    <td>
+                        {% if event.publishing_services %}
+                        <ul class="service-list">
+                            {% for service in event.publishing_services %}
+                            <li class="service-item">
+                                <div class="service-icon">
+                                    <svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                                        <rect x="2" y="2" width="20" height="8" rx="2" ry="2"></rect>
+                                        <rect x="2" y="14" width="20" height="8" rx="2" ry="2"></rect>
+                                        <line x1="6" y1="6" x2="6.01" y2="6"></line>
+                                        <line x1="6" y1="18" x2="6.01" y2="18"></line>
+                                    </svg>
+                                </div>
+                                <a href="/services/{{ service.id }}.html">{{ service.title }}</a>
+                            </li>
+                            {% endfor %}
+                        </ul>
+                        {% else %}
+                        <span class="no-producers">No producers documented</span>
+                        {% endif %}
+                    </td>
+                    <td>
+                        {% if event.consuming_services %}
+                        <ul class="service-list">
+                            {% for service in event.consuming_services %}
+                            <li class="service-item">
+                                <div class="service-icon">
+                                    <svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                                        <rect x="2" y="2" width="20" height="8" rx="2" ry="2"></rect>
+                                        <rect x="2" y="14" width="20" height="8" rx="2" ry="2"></rect>
+                                        <line x1="6" y1="6" x2="6.01" y2="6"></line>
+                                        <line x1="6" y1="18" x2="6.01" y2="18"></line>
+                                    </svg>
+                                </div>
+                                <a href="/services/{{ service.id }}.html">{{ service.title }}</a>
+                            </li>
+                            {% endfor %}
+                        </ul>
+                        {% else %}
+                        <span class="no-consumers">No consumers documented</span>
+                        {% endif %}
+                    </td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+    
+    <div class="pagination">
+        <div class="pagination-controls">
+            <button class="pagination-button" id="first-page">&lt;&lt;</button>
+            <button class="pagination-button" id="prev-page">&lt;</button>
+            <button class="pagination-button" id="next-page">&gt;</button>
+            <button class="pagination-button" id="last-page">&gt;&gt;</button>
+        </div>
+        
+        <div class="pagination-info">
+            Page <span id="current-page">1</span> of <span id="total-pages">{{ total_pages }}</span>
+        </div>
+        
+        <div class="go-to-page">
+            Go to page: <input type="number" id="go-to-page-input" min="1" max="{{ total_pages }}" value="1">
+        </div>
+        
+        <div class="page-size-selector">
+            Show
+            <select id="page-size-select">
+                <option value="10">10</option>
+                <option value="20">20</option>
+                <option value="50">50</option>
+                <option value="100">100</option>
+            </select>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    // Elements
+    const tableBody = document.getElementById('events-table-body');
+    const filterButtons = document.querySelectorAll('.filter-button');
+    const searchMessage = document.getElementById('search-message');
+    const searchProducers = document.getElementById('search-producers');
+    const searchConsumers = document.getElementById('search-consumers');
+    const eventRows = document.querySelectorAll('.event-row');
+    
+    // Pagination elements
+    const firstPageBtn = document.getElementById('first-page');
+    const prevPageBtn = document.getElementById('prev-page');
+    const nextPageBtn = document.getElementById('next-page');
+    const lastPageBtn = document.getElementById('last-page');
+    const currentPageSpan = document.getElementById('current-page');
+    const totalPagesSpan = document.getElementById('total-pages');
+    const goToPageInput = document.getElementById('go-to-page-input');
+    const pageSizeSelect = document.getElementById('page-size-select');
+    
+    // State
+    let currentPage = 1;
+    let pageSize = parseInt(pageSizeSelect.value);
+    let filteredRows = [...eventRows];
+    let activeFilter = 'all';
+    
+    // Initialize
+    updatePagination();
+    
+    // Filter by event type
+    filterButtons.forEach(button => {
+        button.addEventListener('click', function() {
+            const filterType = this.getAttribute('data-type');
+            
+            // Update active button
+            filterButtons.forEach(btn => btn.classList.remove('active'));
+            this.classList.add('active');
+            
+            activeFilter = filterType;
+            applyFilters();
+        });
+    });
+    
+    // Search functionality
+    searchMessage.addEventListener('input', applyFilters);
+    searchProducers.addEventListener('input', applyFilters);
+    searchConsumers.addEventListener('input', applyFilters);
+    
+    // Pagination handlers
+    firstPageBtn.addEventListener('click', () => {
+        if (currentPage > 1) {
+            currentPage = 1;
+            updatePagination();
+        }
+    });
+    
+    prevPageBtn.addEventListener('click', () => {
+        if (currentPage > 1) {
+            currentPage--;
+            updatePagination();
+        }
+    });
+    
+    nextPageBtn.addEventListener('click', () => {
+        const totalPages = Math.ceil(filteredRows.length / pageSize);
+        if (currentPage < totalPages) {
+            currentPage++;
+            updatePagination();
+        }
+    });
+    
+    lastPageBtn.addEventListener('click', () => {
+        const totalPages = Math.ceil(filteredRows.length / pageSize);
+        if (currentPage < totalPages) {
+            currentPage = totalPages;
+            updatePagination();
+        }
+    });
+    
+    goToPageInput.addEventListener('change', () => {
+        const totalPages = Math.ceil(filteredRows.length / pageSize);
+        let page = parseInt(goToPageInput.value);
+        
+        if (page < 1) page = 1;
+        if (page > totalPages) page = totalPages;
+        
+        currentPage = page;
+        updatePagination();
+    });
+    
+    pageSizeSelect.addEventListener('change', () => {
+        pageSize = parseInt(pageSizeSelect.value);
+        currentPage = 1; // Reset to first page
+        updatePagination();
+    });
+    
+    // Apply all filters and update display
+    function applyFilters() {
+        const messageFilter = searchMessage.value.toLowerCase();
+        const producersFilter = searchProducers.value.toLowerCase();
+        const consumersFilter = searchConsumers.value.toLowerCase();
+        
+        filteredRows = [...eventRows].filter(row => {
+            // Filter by event type
+            if (activeFilter !== 'all' && row.getAttribute('data-type') !== activeFilter) {
+                return false;
+            }
+            
+            // Filter by message name
+            const messageName = row.querySelector('.event-cell').textContent.trim().toLowerCase();
+            if (messageFilter && !messageName.includes(messageFilter)) {
+                return false;
+            }
+            
+            // Filter by producers
+            const producersContent = row.querySelectorAll('td')[1].textContent.toLowerCase();
+            if (producersFilter && !producersContent.includes(producersFilter)) {
+                return false;
+            }
+            
+            // Filter by consumers
+            const consumersContent = row.querySelectorAll('td')[2].textContent.toLowerCase();
+            if (consumersFilter && !consumersContent.includes(consumersFilter)) {
+                return false;
+            }
+            
+            return true;
+        });
+        
+        currentPage = 1; // Reset to first page when filters change
+        updatePagination();
+    }
+    
+    // Update pagination display and visible rows
+    function updatePagination() {
+        const totalPages = Math.ceil(filteredRows.length / pageSize);
+        totalPagesSpan.textContent = totalPages;
+        currentPageSpan.textContent = currentPage;
+        goToPageInput.value = currentPage;
+        goToPageInput.max = totalPages;
+        
+        // Enable/disable navigation buttons
+        firstPageBtn.disabled = currentPage === 1;
+        prevPageBtn.disabled = currentPage === 1;
+        nextPageBtn.disabled = currentPage === totalPages;
+        lastPageBtn.disabled = currentPage === totalPages;
+        
+        // Calculate visible rows for current page
+        const startIndex = (currentPage - 1) * pageSize;
+        const endIndex = startIndex + pageSize;
+        
+        // Hide all rows first
+        eventRows.forEach(row => {
+            row.style.display = 'none';
+        });
+        
+        // Show only the rows for current page
+        filteredRows.slice(startIndex, endIndex).forEach(row => {
+            row.style.display = '';
+        });
+    }
+});
+</script>
+{% endblock %}

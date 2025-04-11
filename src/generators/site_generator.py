@@ -13,6 +13,7 @@ from parser.service_parser import ServiceParser
 from parser.event_parser import EventParser
 from generators.service_page import ServicePageGenerator
 from generators.event_page import EventPageGenerator
+from generators.event_table import EventTableGenerator
 
 class SiteGenerator:
     """Generator for the entire documentation site."""
@@ -35,6 +36,7 @@ class SiteGenerator:
         # Initialize page generators
         self.service_page_generator = ServicePageGenerator(output_directory)
         self.event_page_generator = EventPageGenerator(output_directory)
+        self.event_table_generator = EventTableGenerator(output_directory)
         
         # Cache for all events and their relations
         self.event_relations = None
@@ -248,5 +250,14 @@ class SiteGenerator:
         for event in self.all_events:
             event_page = self.generate_event_page(event)
             generated_pages.append(event_page)
+            
+        # Generate event table page
+        all_events = []
+        for event_file in self.all_events:
+            event = self.event_parser.parse(event_file)
+            all_events.append(event)
+            
+        event_table_page = self.event_table_generator.generate(all_events, self.event_relations)
+        generated_pages.append(event_table_page)
             
         return generated_pages
